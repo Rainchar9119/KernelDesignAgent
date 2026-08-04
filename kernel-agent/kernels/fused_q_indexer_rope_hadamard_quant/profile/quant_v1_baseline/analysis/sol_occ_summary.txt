@@ -1,0 +1,96 @@
+########## B=1 details ##########
+    Elapsed Cycles                cycle       10,822
+    Memory Throughput                 %         1.17
+    DRAM Throughput                   %         0.06
+    Duration                         us         5.31
+    L1/TEX Cache Throughput           %         5.02
+    L2 Cache Throughput               %         0.23
+    SM Active Cycles              cycle       285.33
+    Compute (SM) Throughput           %         0.20
+    Memory Throughput                           Gbyte/s         4.77
+    Avg. Active Threads Per Warp                                   32
+    Avg. Not Predicated Off Threads Per Warp                    29.96
+    Block Size                                                   128
+    Grid Size                                                     16
+    Registers Per Thread             register/thread              24
+    Threads                                   thread           2,048
+    Waves Per SM                                                0.01
+    Block Limit Barriers                  block           32
+    Block Limit SM                        block           32
+    Block Limit Registers                 block           21
+    Block Limit Shared Mem                block           32
+    Block Limit Warps                     block           16
+    Theoretical Occupancy                     %          100
+    Achieved Occupancy                        %         6.93
+    Achieved Active Warps Per SM           warp         4.44
+    Total DRAM Elapsed Cycles        cycle    1,341,696
+    Total L1 Elapsed Cycles          cycle    1,605,300
+    Total L2 Elapsed Cycles          cycle    1,892,784
+    Average SM Active Cycles         cycle       285.33
+    Total SM Elapsed Cycles          cycle    1,605,300
+    Total SMSP Elapsed Cycles        cycle    6,421,200
+
+########## B=64 details ##########
+    Elapsed Cycles                cycle       11,167
+    Memory Throughput                 %         7.98
+    DRAM Throughput                   %         2.52
+    Duration                         us         5.47
+    L1/TEX Cache Throughput           %        23.04
+    L2 Cache Throughput               %         2.00
+    SM Active Cycles              cycle     3,978.82
+    Compute (SM) Throughput           %        11.49
+    Memory Throughput                           Gbyte/s       197.66
+    Avg. Active Threads Per Warp                                   32
+    Avg. Not Predicated Off Threads Per Warp                    29.97
+    Block Size                                                   128
+    Grid Size                                                  1,024
+    Registers Per Thread             register/thread              24
+    Threads                                   thread         131,072
+    Waves Per SM                                                0.42
+    Block Limit Barriers                  block           32
+    Block Limit SM                        block           32
+    Block Limit Registers                 block           21
+    Block Limit Shared Mem                block           32
+    Block Limit Warps                     block           16
+    Theoretical Occupancy                     %          100
+    Achieved Occupancy                        %        41.10
+    Achieved Active Warps Per SM           warp        26.31
+    Total DRAM Elapsed Cycles        cycle    1,383,424
+    Total L1 Elapsed Cycles          cycle    1,746,200
+    Total L2 Elapsed Cycles          cycle    1,954,260
+    Average SM Active Cycles         cycle     3,978.82
+    Total SM Elapsed Cycles          cycle    1,746,200
+    Total SMSP Elapsed Cycles        cycle    6,984,800
+
+########## B=256 details ##########
+    Elapsed Cycles                cycle       17,889
+    Memory Throughput                 %        20.22
+    DRAM Throughput                   %         6.15
+    Duration                         us         8.86
+    L1/TEX Cache Throughput           %        39.10
+    L2 Cache Throughput               %         4.40
+    SM Active Cycles              cycle     9,460.21
+    Compute (SM) Throughput           %        28.88
+    Memory Throughput                           Gbyte/s       485.17
+    Avg. Active Threads Per Warp                                   32
+    Avg. Not Predicated Off Threads Per Warp                    29.97
+    Block Size                                                   128
+    Grid Size                                                  4,096
+    Registers Per Thread             register/thread              24
+    Threads                                   thread         524,288
+    Waves Per SM                                                1.68
+    Block Limit Barriers                  block           32
+    Block Limit SM                        block           32
+    Block Limit Registers                 block           21
+    Block Limit Shared Mem                block           32
+    Block Limit Warps                     block           16
+    Theoretical Occupancy                     %          100
+    Achieved Occupancy                        %        66.39
+    Achieved Active Warps Per SM           warp        42.49
+    Total DRAM Elapsed Cycles        cycle    2,254,848
+    Total L1 Elapsed Cycles          cycle    2,779,964
+    Total L2 Elapsed Cycles          cycle    3,170,996
+    Average SM Active Cycles         cycle     9,460.21
+    Total SM Elapsed Cycles          cycle    2,779,964
+    Total SMSP Elapsed Cycles        cycle   11,119,856
+

@@ -1,0 +1,481 @@
+"""Phase 0 harness for the `fused_q_indexer_rope_hadamard_bf16` optimization.
+
+Judges (per PLAN.md):
+  - Golden (correctness): pure-PyTorch reference (RoPE on tail 64 dims +
+    normalized 128-pt Sylvester Walsh-Hadamard `scale=128**-0.5` +
+    `weights_out = weight * weight_scale`). The only correctness oracle.
+  - Baseline (perf target): the CURRENT sglang CUDA kernel wall-clock time.
+    We must beat it (kernel/baseline < 1.0).
+  - Timing: CUDA events, warmup >=25 + repeat >=100, median. Baseline and
+    candidate use identical inputs and identical timing.
+
+Phase 0: baseline and candidate are the SAME implementation (current kernel);
+this just wires up correctness + timing. Later phases swap in a modified .cuh.
+
+Usage:  python harness.py            # default shape B=128, H=64
+        python harness.py --batch 64
+"""
+import argparse
+import importlib.machinery
+import importlib.util
+import os
+import statistics
+import sys
+import types
+
+# --- sglang python root (contains the `sglang` package) ---
+SGLANG_PYTHON = (
+    "/root/paddlejob/inference-public/yuanzihang/"
+    "baidu/wenxin/sglang/python"
+)
+
+
+def _install_torchvision_stub():
+    """Historically torchvision was ABI-broken in this env (torchvision::nms
+    missing) and transformers hard-imported it, so we shadowed it with a
+    permissive stub. The env now ships a WORKING torchvision (nms OK,
+    InterpolationMode.NEAREST_EXACT present); in that case the stub is HARMFUL
+    -- transformers 5.x reads InterpolationMode.NEAREST_EXACT off it and the
+    stub's fake type lacks that attr. So only install the stub if the real
+    torchvision actually fails to import."""
+    try:
+        import torchvision  # noqa: F401
+        import torchvision.ops  # noqa: F401
+        import torchvision.transforms  # noqa: F401
+        return  # real torchvision works -> do NOT shadow it
+    except Exception:
+        pass
+
+    class _Stub(types.ModuleType):
+        def __init__(self, name):
+            super().__init__(name)
+            self.__spec__ = importlib.machinery.ModuleSpec(name, loader=None)
+            self.__path__ = []
+            self.__version__ = "0.19.0"
+
+        def __getattr__(self, k):
+            if k.startswith("__") and k.endswith("__"):
+                raise AttributeError(k)
+            return type(k, (), {})
+
+    for n in [
+        "torchvision",
+        "torchvision.io",
+        "torchvision.transforms",
+        "torchvision.ops",
+    ]:
+        if n not in sys.modules:
+            sys.modules[n] = _Stub(n)
+    sys.modules["torchvision"].io = sys.modules["torchvision.io"]
+
+
+def _load_elementwise():
+    """Load the `sglang.jit_kernel.dsv4.elementwise` module WITHOUT running
+    `dsv4/__init__.py` (which imports gemm -> transformers and explodes on the
+    broken torchvision). We manually create the `sglang.jit_kernel.dsv4` package
+    object pointing at the real dir, then load `elementwise.py` by file path."""
+    if SGLANG_PYTHON not in sys.path:
+        sys.path.insert(0, SGLANG_PYTHON)
+    _install_torchvision_stub()
+
+    dsv4_dir = os.path.join(SGLANG_PYTHON, "sglang/jit_kernel/dsv4")
+    pkg_name = "sglang.jit_kernel.dsv4"
+    if pkg_name not in sys.modules:
+        pkg = types.ModuleType(pkg_name)
+        pkg.__path__ = [dsv4_dir]
+        pkg.__spec__ = importlib.machinery.ModuleSpec(
+            pkg_name, loader=None, is_package=True
+        )
+        sys.modules[pkg_name] = pkg
+
+    mod_name = pkg_name + ".elementwise"
+    if mod_name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(
+            mod_name, os.path.join(dsv4_dir, "elementwise.py")
+        )
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[mod_name] = mod
+        spec.loader.exec_module(mod)
+    return sys.modules[mod_name]
+
+
+def _load_baseline_fn():
+    """Public wrapper `fused_q_indexer_rope_hadamard_bf16` (allocates outputs,
+    views freqs, looks up the JIT module on every call)."""
+    return _load_elementwise().fused_q_indexer_rope_hadamard_bf16
+
+
+# --- Candidate source (our editable copy of the repo kernel) ---------------
+# Baseline compiles the REPO file (KERNEL_PATH/csrc/deepseek_v4/main_norm_rope.cuh)
+# via load_jit's hard-coded path. To get a candidate that can DIVERGE from
+# baseline without touching the repo, we keep an editable copy in ./candidate/
+# and compile IT directly with load_inline (bypassing load_jit's path munging).
+# Edit ONLY that copy in Phase 2; the repo file is never modified.
+HERE = os.path.dirname(os.path.abspath(__file__))
+CANDIDATE_CUH = os.path.join(HERE, "candidate", "main_norm_rope.cuh")
+_REPO_CUH = os.path.join(
+    SGLANG_PYTHON, "sglang/jit_kernel/csrc/deepseek_v4/main_norm_rope.cuh"
+)
+
+
+def save_baseline_copy(force=False):
+    """Refresh ./candidate/main_norm_rope.cuh from the current repo kernel.
+    Only writes inside this kernel dir; reads the repo file (allowed)."""
+    import shutil
+
+    os.makedirs(os.path.dirname(CANDIDATE_CUH), exist_ok=True)
+    if force or not os.path.exists(CANDIDATE_CUH):
+        shutil.copyfile(_REPO_CUH, CANDIDATE_CUH)
+    return CANDIDATE_CUH
+
+
+def _load_candidate_module(dtype, cuh_path=None, lineinfo=True):
+    """Compile the bf16 indexer kernel from OUR copy (cuh_path) instead of the
+    repo file. Mirrors load_jit's header_only path but with our source, so the
+    candidate can diverge from baseline. Source hash goes into the module name
+    -> editing the .cuh triggers a recompile automatically."""
+    import sglang.jit_kernel.utils as J
+    from tvm_ffi.cpp import load_inline
+
+    cuh_path = os.path.abspath(cuh_path or CANDIDATE_CUH)
+    args = J.make_cpp_args(dtype, J.is_arch_support_pdl())
+    wrapper = J._make_wrapper(
+        ("forward", f"FusedQIndexerRopeHadamardBf16Kernel<{args}>::forward")
+    )
+    cuda_sources = [f'#include "{cuh_path}"', wrapper]
+    src_hash = J._local_jit_source_hash([cuh_path])
+    safe_args = str(args).replace(", ", "_").replace(",", "_")
+    module_name = f"sgl_kernel_jit_cand_bf16_{safe_args}_{src_hash}"
+    extra_cuda = list(J._get_default_target_flags())
+    if lineinfo:
+        extra_cuda += ["-lineinfo"]  # for ncu source-level profiling (Phase 1)
+    with J._jit_compile_context():
+        return load_inline(
+            module_name,
+            cpp_sources=[],
+            cuda_sources=cuda_sources,
+            extra_cflags=list(J.DEFAULT_CFLAGS),
+            extra_cuda_cflags=extra_cuda,
+            extra_ldflags=list(J.DEFAULT_LDFLAGS),
+            extra_include_paths=list(J.DEFAULT_INCLUDE),
+        )
+
+
+import torch  # noqa: E402  (safe to import anytime; the tv stub only needs to
+# be in place before the sglang import inside _load_elementwise)
+
+
+def module_wrapper(module):
+    """Wrap a raw JIT module into the public-wrapper signature (allocates
+    outputs + views freqs on each call). Used so candidate and baseline share
+    the exact same correctness/cross-check/wrapper-timing code path."""
+
+    def fn(q_input, weight, weight_scale, freqs_cis, positions):
+        freqs_real = torch.view_as_real(freqs_cis).flatten(-2).contiguous()
+        q_bf16 = torch.empty_like(q_input)
+        weights_out = torch.empty(
+            (*q_input.shape[:-1], 1), dtype=torch.float32, device=q_input.device
+        )
+        module.forward(
+            q_input, q_bf16, weight, weights_out, float(weight_scale),
+            freqs_real, positions,
+        )
+        return q_bf16, weights_out
+
+    return fn
+
+
+def make_direct_forward(inputs, module=None):
+    """Return a zero-arg callable that runs ONLY `module.forward(...)` on
+    pre-allocated buffers. This isolates the actual kernel launch+exec time
+    from the Python wrapper's per-call tensor allocation + freqs view + module
+    lookup (which dominate at these tiny sizes). Baseline and candidate must
+    use the same buffers for a fair comparison. If `module` is None, use the
+    current repo (baseline) JIT module."""
+    q_input, weight, weight_scale, freqs_cis, positions = inputs
+    if module is None:
+        elem = _load_elementwise()
+        module = elem._jit_main_q_indexer_rope_hadamard_bf16_module(q_input.dtype)
+    freqs_real = torch.view_as_real(freqs_cis).flatten(-2).contiguous()
+    q_bf16 = torch.empty_like(q_input)
+    weights_out = torch.empty(
+        (*q_input.shape[:-1], 1), dtype=torch.float32, device=q_input.device
+    )
+    ws = float(weight_scale)
+
+    def _run():
+        module.forward(
+            q_input, q_bf16, weight, weights_out, ws, freqs_real, positions
+        )
+        return q_bf16, weights_out
+
+    return _run
+
+# ===========================================================================
+# Golden reference (fp32 on GPU). Verified vs current kernel: max abs diff
+# ~2.4e-4 (pure bf16 rounding), q/weights allclose(rtol=atol=2e-2).
+# ===========================================================================
+_HAD_CACHE = {}
+
+
+def hadamard_matrix(n, device, dtype=torch.float32):
+    key = (n, device, dtype)
+    if key not in _HAD_CACHE:
+        H = torch.ones(1, 1, dtype=dtype)
+        while H.shape[0] < n:
+            H = torch.cat(
+                [torch.cat([H, H], 1), torch.cat([H, -H], 1)], 0
+            )
+        _HAD_CACHE[key] = H.to(device=device, dtype=dtype)
+    return _HAD_CACHE[key]
+
+
+def golden(q_input, weight, weight_scale, freqs_cis, positions):
+    """Return (q_bf16, weights_out) matching the CUDA kernel semantics."""
+    qf = q_input.float()  # (B, H, 128)
+    B, H, D = qf.shape
+    fc = freqs_cis[positions.long()]  # (B, rope_dim//2) complex
+    cos = fc.real[:, None, :]  # (B, 1, 32)
+    sin = fc.imag[:, None, :]
+    tail = qf[..., 64:]  # (B, H, 64), interleaved real/imag
+    re = tail[..., 0::2]
+    im = tail[..., 1::2]
+    nr = re * cos - im * sin
+    ni = re * sin + im * cos
+    ntail = torch.stack([nr, ni], dim=-1).flatten(-2)  # re-interleave -> 64
+    qrot = torch.cat([qf[..., :64], ntail], dim=-1)  # (B, H, 128)
+    Hm = hadamard_matrix(128, qf.device)  # symmetric
+    y = torch.matmul(qrot, Hm) * (128 ** -0.5)
+    q_bf16 = y.to(torch.bfloat16)
+    weights_out = weight.float() * float(weight_scale)  # (B, H)
+    return q_bf16, weights_out
+
+
+# ===========================================================================
+# Input generation
+# ===========================================================================
+def make_inputs(batch, heads=64, head_dim=128, rope_dim=64, max_pos=4096, seed=0):
+    g = torch.Generator(device="cuda").manual_seed(seed)
+    dev = torch.device("cuda")
+    q_input = torch.randn(
+        batch, heads, head_dim, dtype=torch.bfloat16, device=dev, generator=g
+    )
+    weight = torch.randn(
+        batch, heads, dtype=torch.bfloat16, device=dev, generator=g
+    )
+    weight_scale = 0.5
+    angles = torch.rand(max_pos, rope_dim // 2, device=dev, generator=g) * 6.2831853
+    freqs_cis = torch.polar(torch.ones_like(angles), angles)  # complex64
+    positions = torch.randint(
+        0, max_pos, (batch,), dtype=torch.int32, device=dev, generator=g
+    )
+    return q_input, weight, weight_scale, freqs_cis, positions
+
+
+# ===========================================================================
+# Correctness
+# ===========================================================================
+def _check_finite(name, t):
+    tf = t.float()
+    n_nan = torch.isnan(tf).sum().item()
+    n_inf = torch.isinf(tf).sum().item()
+    if n_nan or n_inf:
+        raise AssertionError(f"{name}: {n_nan} NaN, {n_inf} Inf detected")
+
+
+def check_correctness(fn, inputs, rtol=2e-2, atol=2e-2):
+    q_input, weight, weight_scale, freqs_cis, positions = inputs
+    k_q, k_w = fn(q_input, weight, weight_scale, freqs_cis, positions)
+    torch.cuda.synchronize()
+    g_q, g_w = golden(q_input, weight, weight_scale, freqs_cis, positions)
+
+    B, H = weight.shape
+    k_qf, g_qf = k_q.float(), g_q.float()
+    k_wf = k_w.view(B, H).float()
+
+    _check_finite("kernel q", k_q)
+    _check_finite("kernel weights_out", k_w)
+
+    q_ok = torch.allclose(k_qf, g_qf, rtol=rtol, atol=atol)
+    w_ok = torch.allclose(k_wf, g_w, rtol=rtol, atol=atol)
+    q_max = (k_qf - g_qf).abs().max().item()
+    w_max = (k_wf - g_w).abs().max().item()
+
+    print("  [correctness]")
+    print(f"    q       : allclose={q_ok}  max_abs_diff={q_max:.3e}")
+    print(f"    weights : allclose={w_ok}  max_abs_diff={w_max:.3e}")
+    ok = q_ok and w_ok
+    print(f"    NaN/Inf : none")
+    return ok
+
+
+# ===========================================================================
+# Timing (CUDA events, warmup + repeat, median) + L2-flush (cold) variant
+# ===========================================================================
+def make_l2_flusher():
+    """Evict L2 by writing a buffer ~2x the L2 size. Enqueued BEFORE each
+    start.record() so the kernel reads DRAM cold (the flush is not timed).
+    Fixes review #2: reusing one input buffer keeps it hot in L2 and
+    underestimates the true DRAM cost for a memory-bound kernel."""
+    props = torch.cuda.get_device_properties(torch.cuda.current_device())
+    l2_bytes = getattr(props, "l2_cache_size", 0) or (50 * 1024 * 1024)
+    buf = torch.empty(2 * l2_bytes // 4, dtype=torch.float32, device="cuda")
+
+    def flush():
+        buf.zero_()
+
+    return flush, l2_bytes
+
+
+def cuda_time_ms(run, warmup=25, iters=100, flush=None):
+    """Time a zero-arg callable with CUDA events; return median ms. If `flush`
+    is given, it is enqueued before each timed iteration to cold-start L2."""
+    for _ in range(warmup):
+        run()
+    torch.cuda.synchronize()
+    times = []
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    for _ in range(iters):
+        if flush is not None:
+            flush()
+        start.record()
+        run()
+        end.record()
+        end.synchronize()
+        times.append(start.elapsed_time(end))
+    return statistics.median(times)
+
+
+# ===========================================================================
+# Effective memory throughput. This kernel is a memory-bound elementwise op
+# (arithmetic intensity ~2 FLOP/byte), so the meaningful efficiency metric is
+# achieved DRAM bandwidth vs the roofline peak -- NOT TFLOPS (which will always
+# read near-zero here). Time stays the primary judge (per PLAN); bandwidth is
+# the diagnostic. Precise BW comes from ncu (dram__bytes / gpu__time); the
+# event-based number below uses min traffic and is a lower bound (event time
+# includes launch latency, so it under-reports BW, especially at small B).
+# ===========================================================================
+def effective_bytes(B, H, head_dim=128, rope_half=32):
+    q_in = B * H * head_dim * 2      # read q_input  (bf16)
+    q_out = B * H * head_dim * 2     # write q_bf16   (bf16)
+    w_in = B * H * 2                 # read weight    (bf16)
+    w_out = B * H * 4                # write weights_out (fp32)
+    freqs = B * rope_half * 2 * 4    # gather freqs   (32 complex -> 64 fp32)
+    pos = B * 4                      # read positions (int32)
+    return q_in + q_out + w_in + w_out + freqs + pos
+
+
+def report_bandwidth(tag, ms, B, H):
+    gb = effective_bytes(B, H) / 1e9
+    gbps = gb / (ms / 1e3)
+    print(f"    [{tag}] eff. BW ~= {gbps:8.1f} GB/s "
+          f"({effective_bytes(B, H)/1024:.1f} KiB moved / {ms*1e3:.2f} us)")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--batch", type=int, default=128)
+    ap.add_argument("--heads", type=int, default=64)
+    ap.add_argument("--warmup", type=int, default=25)
+    ap.add_argument("--iters", type=int, default=100)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument(
+        "--candidate", default=None,
+        help="path to candidate .cuh to compile as the candidate kernel. "
+        "Default: ./candidate/main_norm_rope.cuh if present.",
+    )
+    ap.add_argument(
+        "--refresh-candidate", action="store_true",
+        help="overwrite ./candidate/main_norm_rope.cuh from the repo file "
+        "before running (resets candidate == baseline).",
+    )
+    args = ap.parse_args()
+
+    assert torch.cuda.is_available(), "CUDA required"
+    baseline_fn = _load_baseline_fn()
+
+    # Candidate: compile our editable copy if it exists, else fall back to
+    # baseline (identical). This is what lets the candidate DIVERGE.
+    if args.refresh_candidate:
+        save_baseline_copy(force=True)
+    cand_path = args.candidate or CANDIDATE_CUH
+    cand_module = None
+    if os.path.exists(cand_path):
+        cand_module = _load_candidate_module(torch.bfloat16, cand_path)
+        candidate_fn = module_wrapper(cand_module)
+        print(f"[candidate] compiled from {cand_path}")
+    else:
+        candidate_fn = baseline_fn
+        print("[candidate] no ./candidate/*.cuh -> candidate == baseline")
+
+    inputs = make_inputs(args.batch, heads=args.heads, seed=args.seed)
+    print(
+        f"shape: B={args.batch} H={args.heads} head_dim=128 rope_dim=64  "
+        f"(total works={args.batch * args.heads})"
+    )
+
+    print("[baseline] correctness vs golden:")
+    base_ok = check_correctness(baseline_fn, inputs)
+    print("[candidate] correctness vs golden:")
+    cand_ok = check_correctness(candidate_fn, inputs)
+
+    # Cross-check candidate vs baseline output (identical only if unchanged).
+    b_q, b_w = baseline_fn(*inputs)
+    c_q, c_w = candidate_fn(*inputs)
+    torch.cuda.synchronize()
+    xq = (b_q.float() - c_q.float()).abs().max().item()
+    xw = (b_w.float() - c_w.float()).abs().max().item()
+    print(f"[cross-check candidate vs baseline] q_max={xq:.3e} w_max={xw:.3e}")
+
+    base_ms = cuda_time_ms(
+        lambda: baseline_fn(*inputs), args.warmup, args.iters
+    )
+    cand_ms = cuda_time_ms(
+        lambda: candidate_fn(*inputs), args.warmup, args.iters
+    )
+    ratio = cand_ms / base_ms
+    print("[timing: end-to-end wrapper] median over "
+          f"{args.iters} iters (warmup {args.warmup}):")
+    print(f"    baseline : {base_ms * 1e3:.3f} us")
+    print(f"    candidate: {cand_ms * 1e3:.3f} us")
+    print(f"    kernel/baseline = {ratio:.4f}")
+
+    # Direct module.forward timing (isolates kernel from Python wrapper),
+    # measured both HOT (reuse buffer) and COLD (flush L2 each iter).
+    B, H = args.batch, args.heads
+    flush, l2_bytes = make_l2_flusher()
+    base_run = make_direct_forward(inputs)                 # repo module
+    cand_run = make_direct_forward(inputs, cand_module)     # candidate module
+
+    d_base = cuda_time_ms(base_run, args.warmup, args.iters)
+    d_cand = cuda_time_ms(cand_run, args.warmup, args.iters)
+    d_ratio = d_cand / d_base
+    print("[timing: direct module.forward, HOT L2] median over "
+          f"{args.iters} iters (warmup {args.warmup}):")
+    print(f"    baseline : {d_base * 1e3:.3f} us")
+    report_bandwidth("baseline ", d_base, B, H)
+    print(f"    candidate: {d_cand * 1e3:.3f} us")
+    report_bandwidth("candidate", d_cand, B, H)
+    print(f"    kernel/baseline = {d_ratio:.4f}")
+
+    c_base = cuda_time_ms(base_run, args.warmup, args.iters, flush=flush)
+    c_cand = cuda_time_ms(cand_run, args.warmup, args.iters, flush=flush)
+    c_ratio = c_cand / c_base
+    print(f"[timing: direct module.forward, COLD L2 "
+          f"(flush {l2_bytes/1024/1024:.0f} MiB/iter)] median:")
+    print(f"    baseline : {c_base * 1e3:.3f} us")
+    report_bandwidth("baseline ", c_base, B, H)
+    print(f"    candidate: {c_cand * 1e3:.3f} us")
+    report_bandwidth("candidate", c_cand, B, H)
+    print(f"    kernel/baseline = {c_ratio:.4f}")
+
+    passed = base_ok and cand_ok
+    print(f"\nRESULT: correctness={'PASS' if passed else 'FAIL'}  "
+          f"wrapper_ratio={ratio:.4f}  direct_hot_ratio={d_ratio:.4f}  "
+          f"direct_cold_ratio={c_ratio:.4f}")
+    sys.exit(0 if passed else 1)
+
+
+if __name__ == "__main__":
+    main()

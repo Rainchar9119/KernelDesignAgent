@@ -1,0 +1,46 @@
+### PR-verify bf16 @ Mon Aug  3 02:20:19 PM CST 2026
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+=== building (bf16_store): baseline=pristine-upstream  cand=PR-repo-file ===
+Could not import transformers.models.llama.modeling_llama; LlamaFlashAttention2 compat patch not applied.
+
+=== correctness [bf16_store] ===
+[OK ] extend N=   256 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=   256 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  1024 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  1024 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  2048 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  2048 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  4096 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  4096 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  8192 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  8192 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N= 16384 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N= 16384 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=   256 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=   256 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  1024 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  1024 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  2048 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  2048 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  4096 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  4096 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  8192 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  8192 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N= 16384 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N= 16384 perm=1 parity_diff=0 dirty=0 nan/inf=0
+ALL CORRECT
+
+=== timing [bf16_store] (median us, ratio=cand/base <1 is faster) ===
+extend N=   256  base=    8.58us  cand=    7.84us  ratio= 0.914
+extend N=  1024  base=    8.61us  cand=    8.58us  ratio= 0.996
+extend N=  2048  base=    9.70us  cand=    8.67us  ratio= 0.894
+extend N=  4096  base=   12.67us  cand=   10.62us  ratio= 0.838
+extend N=  8192  base=   16.77us  cand=   13.66us  ratio= 0.815
+extend N= 16384  base=   24.99us  cand=   18.85us  ratio= 0.754
+decode N=   256  base=    8.58us  cand=    8.61us  ratio= 1.004
+decode N=  1024  base=    8.61us  cand=    8.61us  ratio= 1.000
+decode N=  2048  base=    9.68us  cand=    9.63us  ratio= 0.995
+decode N=  4096  base=   12.67us  cand=   10.62us  ratio= 0.838
+decode N=  8192  base=   16.77us  cand=   14.69us  ratio= 0.876
+decode N= 16384  base=   25.98us  cand=   20.90us  ratio= 0.804

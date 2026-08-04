@@ -1,0 +1,106 @@
+===== Stall hotspots for b256 =====
+Total distinct (file, line) entries: 32
+
+Rank      Total File                            Line  Breakdown (stall: count)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+   0         33 main_norm_rope.cuh               461  long_scoreboard: 33
+   1         33 main_norm_rope.cuh               493  long_scoreboard: 33
+   2         32 type.cuh                          54  short_scoreboard: 20, long_scoreboard: 9, selected: 1, wait: 1, math_pipe_throttle: 1
+   3         31 main_norm_rope.cuh               476  long_scoreboard: 29, math_pipe_throttle: 1, selected: 1
+   4         27 main_norm_rope.cuh               551  drain: 17, wait: 4, selected: 3, branch_resolving: 3
+   5         25 main_norm_rope.cuh               541  wait: 7, not_selected: 5, selected: 5, short_scoreboard: 3, branch_resolving: 3, math_pipe_throttle: 1, no_instructions: 1
+   6         24 main_norm_rope.cuh               433  no_instructions: 17, not_selected: 7
+   7         22 main_norm_rope.cuh               524  short_scoreboard: 13, selected: 6, not_selected: 3
+   8         18 main_norm_rope.cuh               549  wait: 8, not_selected: 7, dispatch_stall: 2, selected: 1
+   9         15 main_norm_rope.cuh               540  short_scoreboard: 9, not_selected: 2, selected: 2, wait: 1, branch_resolving: 1
+  10         14 main_norm_rope.cuh               458  wait: 5, short_scoreboard: 4, math_pipe_throttle: 2, selected: 1, dispatch_stall: 1, not_selected: 1
+  11         13 sm_30_intrinsics.hpp             449  wait: 8, selected: 3, not_selected: 1, dispatch_stall: 1
+  12          8 main_norm_rope.cuh               455  short_scoreboard: 7, selected: 1
+  13          8 main_norm_rope.cuh               450  not_selected: 4, wait: 3, math_pipe_throttle: 1
+  14          6 warp.cuh                          49  short_scoreboard: 5, selected: 1
+
+
+===== Per-stall-type top lines =====
+
+--- long_scoreboard ---
+        33  main_norm_rope.cuh:461
+        33  main_norm_rope.cuh:493
+        29  main_norm_rope.cuh:476
+         9  type.cuh:54
+
+--- short_scoreboard ---
+        20  type.cuh:54
+        13  main_norm_rope.cuh:524
+         9  main_norm_rope.cuh:540
+         7  main_norm_rope.cuh:455
+         5  warp.cuh:49
+         4  main_norm_rope.cuh:458
+         3  main_norm_rope.cuh:541
+
+--- wait ---
+         8  sm_30_intrinsics.hpp:449
+         8  main_norm_rope.cuh:549
+         7  main_norm_rope.cuh:541
+         5  main_norm_rope.cuh:458
+         4  main_norm_rope.cuh:551
+         3  main_norm_rope.cuh:450
+         1  type.cuh:54
+         1  main_norm_rope.cuh:540
+         1  main_norm_rope.cuh:456
+         1  main_norm_rope.cuh:470
+
+--- math_pipe_throttle ---
+         2  main_norm_rope.cuh:458
+         2  main_norm_rope.cuh:537
+         1  main_norm_rope.cuh:476
+         1  type.cuh:54
+         1  main_norm_rope.cuh:541
+         1  main_norm_rope.cuh:450
+
+--- mio_throttle ---
+         4  main_norm_rope.cuh:459
+         1  main_norm_rope.cuh:460
+
+--- not_selected ---
+         7  main_norm_rope.cuh:549
+         7  main_norm_rope.cuh:433
+         5  main_norm_rope.cuh:541
+         4  main_norm_rope.cuh:450
+         3  main_norm_rope.cuh:524
+         2  main_norm_rope.cuh:540
+         1  main_norm_rope.cuh:458
+         1  sm_30_intrinsics.hpp:449
+         1  fp8_utils.cuh:43
+
+--- dispatch_stall ---
+         2  main_norm_rope.cuh:549
+         1  main_norm_rope.cuh:458
+         1  main_norm_rope.cuh:475
+         1  sm_30_intrinsics.hpp:449
+         1  main_norm_rope.cuh:459
+         1  vec.cuh:90
+
+--- drain ---
+        17  main_norm_rope.cuh:551
+
+--- no_instructions ---
+        17  main_norm_rope.cuh:433
+         1  main_norm_rope.cuh:541
+
+--- selected ---
+         6  main_norm_rope.cuh:524
+         5  main_norm_rope.cuh:541
+         4  fp8_utils.cuh:43
+         3  sm_30_intrinsics.hpp:449
+         3  main_norm_rope.cuh:551
+         3  main_norm_rope.cuh:543
+         2  main_norm_rope.cuh:540
+         1  main_norm_rope.cuh:476
+         1  type.cuh:54
+         1  main_norm_rope.cuh:455
+
+--- branch_resolving ---
+         4  main_norm_rope.cuh:547
+         3  main_norm_rope.cuh:541
+         3  main_norm_rope.cuh:551
+         1  main_norm_rope.cuh:540

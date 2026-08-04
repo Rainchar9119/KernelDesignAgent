@@ -1,0 +1,8 @@
+N mode base_us cand_us ratio
+32 decode 4.64 4.61 0.9935
+64 decode 4.74 4.67 0.9852
+128 decode 4.70 4.48 0.9532
+256 decode 4.74 4.74 1.0000
+512 decode 4.67 4.96 1.0621
+1024 decode 5.02 5.25 1.0458
+2048 decode 6.50 6.37 0.9800

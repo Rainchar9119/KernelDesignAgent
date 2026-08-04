@@ -1,0 +1,69 @@
+    OPT   This workload exhibits low compute throughput and memory bandwidth utilization relative to the peak           
+          performance of this device. Achieved compute throughput and/or memory bandwidth below 60.0% of peak           
+          typically indicate latency issues. Look at Scheduler Statistics and Warp State Statistics for potential       
+          reasons.                                                                                                      
+--
+    WRN   Sampling interval is larger than 10% of the workload duration, which likely results in very few collected     
+          samples.                                                                                                      
+
+    Section: Compute Workload Analysis
+--
+    OPT   Est. Local Speedup: 83.18%                                                                                    
+          All compute pipelines are under-utilized. Either this workload is very small or it doesn't issue enough warps 
+          per scheduler. Check the Launch Statistics and Scheduler Statistics sections for further details.             
+
+--
+    OPT   Est. Speedup: 4.902%                                                                                          
+          Out of the 3153312.0 bytes sent to the L2 Compression unit only 0.00% were successfully compressed. To        
+          increase this success rate, consider marking only those memory regions as compressible that contain the most  
+          zero values and/or expose the most homogeneous values.                                                        
+--
+    OPT   Est. Speedup: 1.469%                                                                                          
+          The memory access pattern for global loads from L1TEX might not be optimal. On average, only 29.5 of the 32   
+          bytes transmitted per sector are utilized by each thread. This could possibly be caused by a stride between   
+          threads. Check the Source Counters section for uncoalesced global loads.                                      
+--
+    OPT   Est. Local Speedup: 49.45%                                                                                    
+          Every scheduler is capable of issuing one instruction per cycle, but for this workload each scheduler only    
+          issues an instruction every 2.0 cycles. This might leave hardware resources underutilized and may lead to     
+          less optimal performance. Out of the maximum of 16 warps per scheduler, this workload allocates an average    
+--
+    OPT   Est. Speedup: 40.01%                                                                                          
+          On average, each warp of this workload spends 8.5 cycles being stalled waiting for a scoreboard dependency on 
+          a L1TEX (local, global, surface, texture) operation. Find the instruction producing the data being waited     
+          upon to identify the culprit. To reduce the number of cycles waiting on L1TEX data accesses verify the        
+--
+    OPT   Est. Speedup: 4.705%                                                                                          
+          This workload executes 110583 fused and 626637 non-fused FP32 instructions. By converting pairs of non-fused  
+          instructions to their fused (https://docs.nvidia.com/cuda/floating-point/#cuda-and-floating-point),           
+          higher-throughput equivalent, the achieved FP32 performance could be increased by up to 42% (relative to its  
+--
+    OPT   Est. Speedup: 50%                                                                                             
+          A wave of thread blocks is defined as the maximum number of blocks that can be executed in parallel on the    
+          target GPU. The number of blocks in a wave depends on the number of multiprocessors and the theoretical       
+          occupancy of the kernel. This kernel launch results in 1 full waves and a partial wave of 832 thread blocks.  
+--
+    OPT   Est. Speedup: 33.41%                                                                                          
+          The difference between calculated theoretical (100.0%) and measured achieved occupancy (66.6%) can be the     
+          result of warp scheduling overheads or workload imbalances during the kernel execution. Load imbalances can   
+          occur between warps within a block as well as across blocks of the same kernel. See the CUDA Best Practices   
+--
+    OPT   Est. Speedup: 6.003%                                                                                          
+          One or more SMs have a much higher number of active cycles than the average number of active cycles.          
+          Additionally, other SMs have a much lower number of active cycles than the average number of active cycles.   
+          Maximum instance value is 11.86% above the average, while the minimum instance value is 10.37% below the      
+--
+    OPT   Est. Speedup: 9.09%                                                                                           
+          One or more SMSPs have a much higher number of active cycles than the average number of active cycles.        
+          Maximum instance value is 18.12% above the average, while the minimum instance value is 11.78% below the      
+          average.                                                                                                      
+--
+    OPT   Est. Speedup: 6.003%                                                                                          
+          One or more L1 Slices have a much higher number of active cycles than the average number of active cycles.    
+          Additionally, other L1 Slices have a much lower number of active cycles than the average number of active     
+          cycles. Maximum instance value is 11.86% above the average, while the minimum instance value is 10.37% below  
+--
+    OPT   Est. Speedup: 6.294%                                                                                          
+          One or more L2 Slices have a much higher number of active cycles than the average number of active cycles.    
+          Maximum instance value is 11.10% above the average, while the minimum instance value is 8.75% below the       
+          average.                                                                                                      

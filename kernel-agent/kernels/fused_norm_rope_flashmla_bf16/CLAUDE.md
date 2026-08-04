@@ -1,0 +1,51 @@
+# 本任务的永久规则（每个会话自动加载，压缩后仍生效）
+
+## 任务一句话
+优化 `fused_norm_rope_flashmla_bf16`（fused memory-bound elementwise：RMSNorm(512) + RoPE(尾部 64) +
+写 paged KV cache，**无 Hadamard、无 FP8 量化**，head_dim=512），在**保证输出正确**的前提下，
+达到相对原始 `fused_norm_rope_flashmla_bf16` kernel 的 target speedup **≥1.05×**（更快，比值<1.0）。
+
+## 唯一真相源
+- 详细实现计划在 `plan.md`（由 phase 提示词 → `docs/draft.md` → gen-plan + reviewer 打磨而来，
+  含 AC-X 验收标准），进度在 `PROGRESS.md`。
+- **每次动手前，先读 `plan.md` 和 `PROGRESS.md`**，确认当前在哪个 phase、上一轮做到哪。
+- `PROGRESS.md` 里可能含当前 round 的 review 结果，据此判断是否要改上一轮的结果。
+- 不要依赖对话记忆；对话可能被压缩。状态一律以这两个文件为准。
+- 每轮结束必须更新 `PROGRESS.md`，**七个字段缺一不可**：当前 phase、本轮改动、
+  ncu 证据（本轮主瓶颈类别）、**KernelWiki 回查**、kernel/baseline 比值、正确性是否通过、下一步。
+- 本文件（`CLAUDE.md`）只放**不可变的裁判与护栏**；具体做什么以 `plan.md` 为准。二者冲突时，
+  以护栏为上限、`plan.md` 为下限——`plan.md` 不得放宽下面任何一条护栏。
+
+## 三根支柱（裁判，Phase 0 定稿后不得再改）
+- **Golden（正确性参照）**：纯 PyTorch 参考实现（RMSNorm on 512 dims 逐维乘 weight 向量 + RoPE on 尾部
+  64 dims + 转 bf16 写 paged cache，**无 Walsh-Hadamard、无 FP8**；nope 段 448 维直存 + rope 段 64 维旋转后存）。
+  唯一判对错标准。额外用当前原始 kernel 输出做交叉核对（应逐位一致）。**正确性三条全绿才算对**：
+  ① 逐位 parity（candidate vs 原 kernel，读回 kvcache 按 bf16 位模式逐元素比对）；
+  ② golden allclose（valid 槽位 vs golden，rtol=atol=2e-2 + NaN/Inf 检查）；
+  ③ 跳过槽位未写脏（sentinel 预填，验证 skipped/invalid 槽位字节逐字节不变）。
+- **Baseline（性能目标）**：原始 `fused_norm_rope_flashmla_bf16` CUDA kernel 的墙钟时间。目标是 **更快（比值<1.0）**。
+- **计时**：CUDA event，warmup≥25 + 重复≥100 取中位数；新 kernel 和 baseline 用完全相同的输入和计时方式；
+  冷/热 L2 按 ncu-report-skill 建议处理。ncu 纯核以 dram__bytes / gpu__time 为准，ncu 加 `--target-processes application-only`。
+
+## 硬性护栏（违反即任务失败）
+- 不许改 golden 的数学定义，不许放宽容差 `rtol=atol=2e-2`，不许跳过 NaN/Inf 检查，
+  不许摘掉逐位 parity / 跳过槽位未写脏这两条本算子特有的检查。
+- 不许把自己的新 kernel 设成自己的参照；baseline 永远是原始 `fused_norm_rope_flashmla_bf16`。
+- **每轮 NCU 出瓶颈后必须回查 KernelWiki**，并把结果写进 `PROGRESS.md` 本轮的
+  「KernelWiki 回查」字段（本轮具体瓶颈 → 查了哪些页 → 每张读过的页一句「手法 + 其前提在本
+  kernel 成立/不成立」→ 采纳还是拒绝、理由）。未命中也要列出查过的页，且需≥2 条检索路径；
+  只查 `queries/by-problem.md` 那几个宽类别不算回查。**沿用开局那张静态方向清单继续执行 ≠ 回查**
+  ——瓶颈画像每轮都在变。该字段为空或写「同上轮」，本轮即未完成，不得进 review。
+- **只在本 kernel 目录下写文件**。改动 sglang 上游仓库源码前必须先在本目录内做副本/patch 方案并说明，
+  不得直接覆盖仓库文件除非 review 明确同意。绝不动其他 kernel 目录和无关目录。
+- 任何一步跑不通（环境/编译/ncu 权限），**停下报告错误原文**，不反复重试或绕过。
+
+## 节奏
+- 这是人工监督的演练：**Phase 0 交付 harness 后**、**Phase 2 每一轮之后**都要停下等人 review，
+  不要自己一口气跑到底。
+
+## 审查机制（独立 reviewer，非 codex）
+- 本流程**不用 codex**。审查由 `KernelDesignAgent/reviewer/` 目录下新开的**独立 Claude 审查者**做
+  （隔离会话，自己复现数字、查 reward hacking）。
+- 审查者只把结论**追加**进本目录 `PROGRESS.md` 的 REVIEW 段；绝不改本目录其它文件、不替你改代码。
+- 每轮动手前先读 `PROGRESS.md`，若有新 REVIEW 结论据此修改上一轮结果。

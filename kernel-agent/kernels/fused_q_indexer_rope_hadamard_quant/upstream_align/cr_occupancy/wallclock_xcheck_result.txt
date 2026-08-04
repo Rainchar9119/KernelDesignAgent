@@ -1,0 +1,9 @@
+Could not import transformers.models.llama.modeling_llama; LlamaFlashAttention2 compat patch not applied.
+     B |  base(us) clean(us) |  ratio
+   256 |     13.60     12.88 |  0.947
+   512 |     17.95     15.78 |  0.879
+  1024 |     26.43     22.16 |  0.838
+  2048 |     43.46     35.07 |  0.807
+  4096 |     78.64     62.88 |  0.800
+  8192 |    146.82    116.27 |  0.792
+ 16384 |    283.90    223.41 |  0.787

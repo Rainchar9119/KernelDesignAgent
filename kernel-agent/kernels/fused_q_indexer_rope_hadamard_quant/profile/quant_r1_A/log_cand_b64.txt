@@ -1,0 +1,7 @@
+/usr/local/lib/python3.12/site-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+==PROF== Connected to process 41467 (/usr/local/bin/python3.12)
+Could not import transformers.models.llama.modeling_llama; LlamaFlashAttention2 compat patch not applied.
+==PROF== Profiling "fused_q_indexer_rope_hadamard_quant": 0%....50%....100% - 9 passes
+==PROF== Disconnected from process 41467
+==PROF== Report: /root/paddlejob/inference-public/yuanzihang/KernelDesignAgent/kernel-agent/kernels/fused_q_indexer_rope_hadamard_quant/profile/quant_r1_A/dur_cand_b64.ncu-rep

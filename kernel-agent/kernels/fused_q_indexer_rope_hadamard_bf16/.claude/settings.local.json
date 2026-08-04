@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(cd:*)",
+      "Bash(for b:*)",
+      "Bash(SRC=\"/root/paddlejob/inference-public/yuanzihang/baidu/wenxin/sglang/python/sglang/jit_kernel/csrc/deepseek_v4/main_norm_rope.cuh\")",
+      "Bash(DST_DIR=\"/root/paddlejob/inference-public/yuanzihang/KernelDesignAgent/kernel-agent/kernels/fused_q_indexer_rope_hadamard_bf16/candidate\")",
+      "Bash(mkdir -p \"$DST_DIR\")",
+      "Bash(cp \"$SRC\" \"$DST_DIR/main_norm_rope.cuh\")",
+      "Read(//root/paddlejob/inference-public/yuanzihang/KernelDesignAgent/kernel-agent/kernels/fused_q_indexer_rope_hadamard_bf16/**)",
+      "Read(//root/paddlejob/inference-public/yuanzihang/KernelDesignAgent/kernel-agent/kernels/fused_q_indexer_rope_hadamard_bf16/$DST_DIR/**)",
+      "Read(//opt/nvidia/nsight-compute/**)",
+      "Bash(find /usr/local/cuda* -path *nsight-compute* -name ncu_report*)",
+      "Bash(export HOME=/root)",
+      "Bash(LOG=profile/phase1_baseline/analysis/smoke.log)",
+      "Bash(timeout 600 ncu --section SpeedOfLight -k \"regex:fused_q_indexer_rope_hadamard_bf16\" -s 10 -c 1 python profile/phase1_baseline/harness/profile_driver.py --batch 256 --launches 40)",
+      "Bash(\"$LOG\")",
+      "Bash(echo \"exit=$?\")",
+      "Read(//root/paddlejob/inference-public/yuanzihang/KernelDesignAgent/kernel-agent/kernels/**)",
+      "Bash(/dev/null echo:*)",
+      "Bash(ps -eo pid,etimes,cmd)",
+      "Bash(echo:*)",
+      "Bash(LOG=profile/phase1_baseline/analysis/smoke2.log)",
+      "Bash(timeout 300 ncu --target-processes application-only --replay-mode kernel --section SpeedOfLight -k \"regex:fused_q_indexer_rope_hadamard_bf16\" -s 5 -c 1 python profile/phase1_baseline/harness/profile_driver.py --batch 256 --launches 20)",
+      "Bash(LOG=profile/phase1_baseline/analysis/full_b256.log)",
+      "Bash(timeout 500 ncu --target-processes application-only --set full --section PmSampling --section PmSampling_WarpStates -k \"regex:fused_q_indexer_rope_hadamard_bf16\" -s 5 -c 1 -o profile/phase1_baseline/reports/full_b256 python profile/phase1_baseline/harness/profile_driver.py --batch 256 --launches 20)",
+      "Bash(nvidia-smi:*)",
+      "Bash(export HOME=/root CUDA_VISIBLE_DEVICES=4)",
+      "Bash(CUDA_VISIBLE_DEVICES=4 python harness.py --batch 256 2>&1 | tail -40)",
+      "Bash(CUDA_VISIBLE_DEVICES=4 ncu --target-processes application-only --set full \\\\\n  -k \"regex:fused_q_indexer_rope_hadamard_bf16\" -s 5 -c 1 \\\\\n  -o profile/phase1_baseline/reports/cand_p1_b256 -f \\\\\n  python profile/phase1_baseline/harness/profile_driver.py --batch 256 --launches 20 2>&1 | tail -25)",
+      "Bash(export CUDA_VISIBLE_DEVICES=4)",
+      "Bash(export CUDA_VISIBLE_DEVICES=0)"
+    ]
+  }
+}

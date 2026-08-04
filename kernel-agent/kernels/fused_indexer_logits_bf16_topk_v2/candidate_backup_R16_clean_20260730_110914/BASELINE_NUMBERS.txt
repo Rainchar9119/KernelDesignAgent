@@ -1,0 +1,9 @@
+Round 16 clean-revert baseline (default build, no streaming, TU == R13).
+Verified 2026-07-30 (idle GPU, warmup25/iters100, ncu pure-kernel):
+  1x16K   1.35   |  64x16K  1.19  |  1x64K   0.68
+  1x256K  0.24   |  8x256K  0.57  |  64x1024 1.48
+Correctness: long 7/7 PASS + short 4/4 + tie 8/8, zero-tolerance.
+baseline pure-kernel (unchanged): 64x1024 ~20.4us, 256x1024 ~34.1us.
+This is the fallback state to restore if cluster (direction B / design_cluster_B.md)
+regresses. Restore: cp <this dir>/fused_kernel.cu candidate/ && rebuild.
+streaming code lives behind -DFUSED_ENABLE_STREAMING (not in default TU).

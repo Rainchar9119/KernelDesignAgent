@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(update-config)",
+      "Read(//root/paddlejob/inference-public/yuanzihang/3.13/bin/**)",
+      "Read(//root/paddlejob/inference-public/yuanzihang/.claude/**)",
+      "WebSearch",
+      "Bash(uv --version)",
+      "Read(//root/.local/share/uv/**)",
+      "Read(//root/.local/share/uv/python/cpython-3.13.14-linux-aarch64-gnu/**)",
+      "Bash(uv python *,不过想的是你这次安装完之后就直接不要用软链接了,你就放在这个目录下/root/paddlejob/inference-public/yuanzihang/3.13)",
+      "Bash(export http_proxy=http://agent.baidu.com:8188)",
+      "Bash(export https_proxy=http://agent.baidu.com:8188)",
+      "Bash(export UV_PYTHON_INSTALL_DIR=/root/paddlejob/inference-public/yuanzihang/3.13/uv-python)",
+      "Bash(uv python *)",
+      "Bash(/root/paddlejob/inference-public/yuanzihang/3.13/uv-python/cpython-3.13.14-linux-aarch64-gnu/bin/python3.13 --version)"
+    ]
+  }
+}

@@ -1,0 +1,795 @@
+"""Judge harness for `fused_indexer_logits_topk_bf16`.
+
+Judges (per CLAUDE.md / plan.md — 定稿后不得改; the golden and the perf baseline
+are two INDEPENDENT concepts):
+  - Correctness golden (the ONLY truth): logits (from tilelang paged-MQA-logits)
+    fed into `topk_transform_512_pytorch_vectorized` (indexer.py:229, torch.topk
+    math). The CUDA radix kernel is the object being REPLACED, so it is never the
+    golden — using it would be self-referential.
+  - Perf baseline (the target to beat): wall-clock time of the TWO-STEP CUDA
+    SEQUENCE  tilelang_bf16_paged_mqa_logits -> topk_transform_512 (CUDA radix),
+    INCLUDING the intermediate fp32 logits allocation + the launch gap. Immutable.
+  - Timing: CUDA events, warmup >=25 + repeat >=100, median. Fused and baseline
+    use identical inputs and identical timing. Cold/hot L2 both reported.
+    The PRIMARY speedup metric is ncu pure-kernel time (`--ncu`), with wall-clock
+    as corroboration: the baseline's wall-clock is ~95% host on this node (the
+    tilelang python wrapper alone is ~50us/call), so wall-clock alone can read a
+    GPU-side regression as a win.
+
+Until a long-capable fused kernel exists, the "fused" path falls back to a STUB
+that chains the same two CUDA kernels, so the judge harness runs end-to-end and
+times a real candidate. A single fused kernel plugs in via `fused_forward`.
+
+Correctness oracle (ZERO tolerance, no rel_tol): per-row SET equality of
+out_page_indices and out_raw_indices vs the pytorch golden (torch.equal after
+sort, since torch.topk(sorted=False) fixes only the SET, not the order), PLUS
+the selected-score MULTISET must match (catches a wrong set of equal size),
+PLUS an explicit NaN/Inf check on the valid region of the intermediate logits
+and on the candidate's selected scores. No boundary excusal.
+
+Usage:  python harness.py                    # representative short shapes
+        python harness.py --shape 64x1024    # one shape
+        python harness.py --long             # 16K/64K/256K varlen tiers
+        python harness.py --ncu 64x1024,long:64x16K   # pure-kernel (primary)
+"""
+import argparse
+import os
+import statistics
+import sys
+
+# Reuse the verified env-bootstrap + module loaders from the smoke script
+# (torchvision stub + path-loading sglang subpackages to dodge the heavy,
+# broken import chain). See smoke_baseline.py / memory env-setup.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from smoke_baseline import load_logits_module, load_topk_module  # noqa: E402
+from golden_topk import load_pytorch_golden  # noqa: E402
+
+import torch  # noqa: E402
+
+# Representative shapes (batch, max_seq_len): small+naive / boundary / mid / big.
+REPRESENTATIVE = [(1, 128), (8, 512), (64, 1024), (256, 1024)]
+# Full promotion sweep: batch {1,8,64,256} x max_seq_len {128,512,1024} = 12.
+FULL = [(b, s) for b in (1, 8, 64, 256) for s in (128, 512, 1024)]
+TOPK = 512
+BLOCK = 64
+NUM_HEADS = 64
+HEAD_DIM = 128
+# Longest compiled on-chip length variant (MAX_SEQ_CAP in fused_kernel.cu). With
+# split-KV a CTA only holds ONE segment, so the buffer must fit the per-segment
+# length, not the whole query -- a 256K query at split~152 has ~1.8K segments.
+# candidate_fits() below applies the host's split formula to check that.
+CANDIDATE_MAX_SEQ = int(os.environ.get("FUSED_MAXSEQ_OVR", 32768))
+NUM_SM = 152
+
+
+def candidate_fits(max_seq_len, batch):
+    """True if the fused candidate can run this case. Since direction-A added the
+    streaming stage1 (constant SMEM, any segment length), the candidate now
+    handles ALL segment lengths — segments too long for a full-logits variant
+    route to streaming in fused_kernel.cu::dispatch_variant. Kept as a hook (and
+    still honors an explicit FUSED_MAXSEQ_OVR cap for isolated profiling)."""
+    cap = os.environ.get("FUSED_MAXSEQ_OVR")
+    if cap is None:
+        return True
+    if max_seq_len <= TOPK:
+        return max_seq_len <= int(cap)
+    np_total = (max_seq_len + BLOCK - 1) // BLOCK
+    split = max(1, min(np_total, (NUM_SM + batch // 2) // max(batch, 1)))
+    seg_len = ((np_total + split - 1) // split) * BLOCK
+    return seg_len <= int(cap)
+
+
+# ===========================================================================
+# Input generation (deterministic; mirrors test _build_case layout)
+# ===========================================================================
+def make_inputs(batch, max_seq_len, heads=NUM_HEADS, head_dim=HEAD_DIM,
+                block=BLOCK, seed=0):
+    """Build one representative case. seq_lens pinned to max_seq_len for every
+    batch (deterministic; the shape table already selects naive vs radix paths
+    via max_seq_len <=/> TOPK). Each batch gets its own distinct set of KV
+    blocks in a shared pool, assigned through page_table."""
+    g = torch.Generator(device="cuda").manual_seed(seed)
+    dev = torch.device("cuda")
+
+    np_total = (max_seq_len + block - 1) // block
+    num_blocks = batch * np_total
+
+    q = torch.randn(batch, 1, heads, head_dim, dtype=torch.bfloat16,
+                    device=dev, generator=g)
+    weight = torch.randn(batch, heads, dtype=torch.float32, device=dev,
+                         generator=g)
+    seq_lens = torch.full((batch,), max_seq_len, dtype=torch.int32, device=dev)
+
+    kv = torch.randn(num_blocks, block, 1, head_dim, dtype=torch.bfloat16,
+                     device=dev, generator=g)
+    kv_packed = kv.view(torch.uint8).view((-1, block, 1, head_dim * 2))
+
+    # Distinct block per (batch, local page): a random permutation of the pool.
+    perm = torch.randperm(num_blocks, dtype=torch.int32, device=dev,
+                          generator=g)
+    page_table = perm.view(batch, np_total).contiguous()
+
+    return {
+        "batch": batch, "max_seq_len": max_seq_len, "heads": heads,
+        "head_dim": head_dim, "block": block, "np_total": np_total,
+        "q": q, "kv_packed": kv_packed, "weight": weight,
+        "seq_lens": seq_lens, "page_table": page_table,
+        # bf16 views the fused CUDA kernel consumes directly (no packing):
+        # q -> [B,H,D], kvcache -> [num_blocks, PBLK, D]
+        "q_bhd": q.view(batch, heads, head_dim),
+        "kv_bf16": kv.view(num_blocks, block, head_dim),
+    }
+
+
+def make_long_inputs(batch, avg_kv, seed=0):
+    """Long-sequence (16K/64K/256K) case via the varlen builder in
+    longseq_inputs.py (aligned to the official test _build_case). Returns the
+    same field names the Runner consumes. Uses the varlen builder's real
+    per-batch seq_lens (mixed lengths) — the golden and both kernels honor them
+    via seq_lens, so mixed-length correctness is exercised, not just uniform."""
+    from longseq_inputs import make_longseq_inputs
+    c = make_longseq_inputs(batch, avg_kv, seed=seed)
+    # Adapt to the harness field names (longseq_inputs already provides most).
+    c["heads"] = c["num_heads"]
+    c["np_total"] = int(c["block_table"].shape[1])
+    return c
+
+
+# Long-sequence tiers (batch, avg_kv). avg_kv is the MEAN context length; the
+# varlen builder spreads per-batch lengths over [0.7, 1.3]*avg_kv.
+#
+# Batch choice per tier is driven by split-KV coverage, not by what fits: with
+# split = max(1, min(np_total, round(152/batch))) the batches below span every
+# split regime — B=1 -> 152 (fully split), B=8/16 -> 19/10, B=64 -> 2,
+# B=128 -> 1 (the combine short-circuit). The 16K tier carries the mid/large
+# batches because that is where a fused win is expected and where split->1 is
+# reachable; 256K stays at small batch, which is also what a 256K-context decode
+# actually looks like. The KV pool is not the binding constraint here (B=128 at
+# 256K would still only be ~9 GiB); the official test's 32Mi-token ceiling is.
+LONG = [(1, 16 * 1024), (4, 16 * 1024), (64, 16 * 1024), (128, 16 * 1024),
+        (1, 64 * 1024), (2, 64 * 1024), (16, 64 * 1024),
+        (1, 256 * 1024), (8, 256 * 1024),
+        # Cluster-band mid batches (split in 2..8, i.e. one query's segments all
+        # fit one 8-block cluster -> candidates for the cluster combine path).
+        # split shown for perseg=256: 32x8K->5, 18x16K->8, 48x16K->3, 32x32K->5,
+        # 18x64K->8. All have seg_len<=32768 so a full-logits variant covers them.
+        (32, 8 * 1024), (18, 16 * 1024), (48, 16 * 1024),
+        (32, 32 * 1024), (18, 64 * 1024)]
+
+
+# Adversarial regression cases (batch, max_seq_len, ntop, note). Each forces the
+# first `ntop` KV positions of every row to a single bit-identical high score,
+# the rest strictly lower, so the top-512 boundary lands INSIDE an exact-tie
+# group whenever ntop != 512. This is the case plan AC-D names and the one that
+# exposed the Round-9 combine bug (nsel=0 -> all -1); random data never hits it.
+# Sizes span the split regimes: split=1 (naive/short), 2, 76, 152 (two-level).
+#   ntop=512 : clean boundary (exact TOPK above threshold)
+#   ntop=513 : one extra tied element straddles the boundary
+#   ntop=600 : whole boundary buried in a large tie group
+#   ntop>CAND path also stresses the coarse-bin overflow branch (R3 挂账).
+TIE_CASES = [
+    (64, 16 * 1024, 512, "split2 clean-boundary"),
+    (64, 16 * 1024, 513, "split2 boundary-in-tie"),
+    (64, 16 * 1024, 600, "split2 large-tie"),
+    (2, 64 * 1024, 513, "split76 boundary-in-tie"),
+    (1, 16 * 1024, 600, "split152 two-level large-tie"),
+    (1, 64 * 1024, 600, "split152 two-level large-tie"),
+    (128, 1024, 600, "split1 naive-path large-tie (control)"),
+    (64, 16 * 1024, 5000, "split2 overflow (tie > coarse-bin scratch)"),
+    # Cluster-band cross-rank ties (only exercised in the FUSED_CLUSTER build):
+    # split in 2..8 puts the tied high-scorers across cluster ranks, so the
+    # top-512 boundary tie spans distributed-SMEM peers, not one block. ntop=600
+    # buries the boundary in the tie; split=8 uses all ranks, split=5/2 leave
+    # some ranks with fewer / a short tail.
+    (18, 8 * 1024, 600, "cluster split8 cross-rank tie"),
+    (32, 8 * 1024, 600, "cluster split5 cross-rank tie"),
+    (64, 8 * 1024, 600, "cluster split2 cross-rank tie"),
+]
+
+
+def make_tie_inputs(batch, max_seq_len, ntop, seed=0):
+    """Long-style case whose first `ntop` KV positions per row are a single
+    bit-identical high-scoring K row (exact tie) and the rest a lower row, so
+    the top-512 boundary falls inside the tie group. Drives the REAL fused
+    kernel (it recomputes logits from K@Q; we shape K so the scores tie), not a
+    patched-logits shortcut. q/weight forced positive so relu keeps the scores."""
+    c = make_long_inputs(batch, max_seq_len, seed=seed)
+    kv = c["kv_bf16"]                 # [num_blocks, PBLK, D] the kernel reads
+    nb, pblk, d = kv.shape
+    g = torch.Generator(device="cuda").manual_seed(seed + 1)
+    hi = torch.randn(d, dtype=torch.bfloat16, device=kv.device, generator=g)
+    lo = (torch.randn(d, dtype=torch.bfloat16, device=kv.device, generator=g)
+          * 0.01)
+    for b in range(c["batch"]):
+        pt = c["page_table"][b]
+        sl = int(c["seq_lens"][b])
+        n = min(ntop, sl)
+        for pos in range(sl):
+            blk = int(pt[pos // pblk])
+            kv[blk, pos % pblk] = hi if pos < n else lo
+    c["q_bhd"].copy_(torch.abs(c["q_bhd"]))
+    c["q"].copy_(c["q_bhd"].view_as(c["q"]))
+    c["weight"].copy_(torch.abs(c["weight"]) + 0.1)
+    c["kv_packed"] = kv.view(torch.uint8).view((-1, pblk, 1, d * 2))
+    return c
+
+
+def check_tie_correctness(runner, c):
+    """Correctness judge for the exact-tie regression cases. Per REVIEW R5:
+    with hundreds of bit-identical tied scores, torch.topk(sorted=False) may pick
+    a DIFFERENT legal 512-subset than the candidate (different page indices), so
+    page-set equality is NOT required here — the authoritative legs are the
+    selected-score MULTISET equality (a wrong-score pick still fails) plus a full
+    valid count. This is strictly the CLAUDE.md tie-absorption clause, not a
+    loosening: multiset equality is more discriminating than page-set (it catches
+    an in-page token swap), and page-set is still reported for the record."""
+    logits = runner.logits(c)
+    torch.cuda.synchronize()
+    _check_finite_valid("logits", logits, c["seq_lens"])
+    g_page, g_raw = runner.golden(c, logits=logits)
+    f_page, f_raw = runner.fused_forward(c)
+    torch.cuda.synchronize()
+
+    g_scores = _selected_score_set(logits, g_raw)
+    f_scores = _selected_score_set(logits, f_raw)
+    score_set = torch.equal(g_scores, f_scores)
+    sel_finite = bool(
+        (torch.isfinite(f_scores) | torch.isneginf(f_scores)).all().item())
+    g_valid = int((g_raw >= 0).sum().item())
+    f_valid = int((f_raw >= 0).sum().item())
+    count_ok = (g_valid == f_valid)
+    page_set = _row_set_equal(f_page, g_page)   # reported, not required
+
+    ok = score_set and sel_finite and count_ok
+    print("  [tie-correctness]  multiset+count authoritative; page-set FYI")
+    print(f"    selected scores  : multiset_equal={score_set}  finite={sel_finite}")
+    print(f"    valid count      : golden={g_valid} cand={f_valid}  ok={count_ok}")
+    print(f"    page-set (FYI)   : set_equal={page_set}")
+    return ok
+
+
+# Frozen timing spec (CLAUDE.md): any ratio that goes into a report must come
+# from at least this much warmup/repetition. Below this the noise floor swamps
+# the signal — an identity comparison (candidate==baseline, true ratio 1.000)
+# measures 0.885 at warmup3/iters8 but 0.979 at warmup25/iters100.
+MIN_WARMUP = 25
+MIN_ITERS = 100
+
+
+# ===========================================================================
+# Two-step primitives (bound once to the loaded modules)
+# ===========================================================================
+class Runner:
+    def __init__(self, use_fused=True):
+        self._tl = load_logits_module()
+        self._tk = load_topk_module(TOPK)
+        self._golden = load_pytorch_golden()   # correctness truth (torch.topk)
+        self._fused = None
+        if use_fused:
+            import importlib.util
+            cand = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "candidate", "fused_indexer.py")
+            if os.path.exists(cand):
+                spec = importlib.util.spec_from_file_location(
+                    "candidate_fused_indexer", cand)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                self._fused = mod
+
+    def logits(self, c):
+        """Step 1: tilelang paged-MQA-logits -> fp32 [batch, max_seq_len].
+        Shared by both the perf baseline and the pytorch correctness golden."""
+        return self._tl.tilelang_bf16_paged_mqa_logits(
+            c["q"], c["kv_packed"], c["weight"], c["seq_lens"],
+            c["page_table"], None, c["max_seq_len"], False)
+
+    def topk(self, c, logits, out_page, out_raw):
+        """CUDA radix top-512 -> out_page_indices (+ out_raw_indices). Used
+        ONLY inside the perf baseline (two_step) — never as correctness golden."""
+        self._tk.topk_transform_512(
+            logits, c["seq_lens"], c["page_table"], out_page, c["block"],
+            out_raw)
+
+    def _alloc_out(self, c):
+        dev = c["q"].device
+        out_page = torch.empty(c["batch"], TOPK, dtype=torch.int32, device=dev)
+        out_raw = torch.empty(c["batch"], TOPK, dtype=torch.int32, device=dev)
+        return out_page, out_raw
+
+    def two_step(self, c):
+        """PERF BASELINE body: alloc intermediate logits + both CUDA kernels
+        (tilelang logits -> CUDA radix top-512). Timing wraps THIS whole
+        callable so the intermediate fp32 logits alloc + launch gap are
+        included. This is the perf target, NOT the correctness golden."""
+        out_page, out_raw = self._alloc_out(c)
+        logits = self.logits(c)
+        self.topk(c, logits, out_page, out_raw)
+        return out_page, out_raw
+
+    def golden(self, c, logits=None):
+        """CORRECTNESS GOLDEN: logits -> topk_transform_512_pytorch_vectorized
+        (torch.topk math, indexer.py:229). Returns (out_page, out_raw). If
+        `logits` is not supplied it is computed from the same tilelang step the
+        baseline uses, so golden and candidate see identical logits."""
+        if logits is None:
+            logits = self.logits(c)
+        out_page, out_raw = self._alloc_out(c)
+        self._golden(logits, c["seq_lens"], c["page_table"], out_page,
+                     c["block"], out_raw)
+        return out_page, out_raw
+
+    def fused_forward(self, c):
+        """CANDIDATE: single fused kernel (logits resident in SMEM, no HBM
+        round-trip, no intermediate tensor) from ./candidate/. Falls back to
+        the two-step stub if the candidate module isn't present."""
+        if self._fused is None:
+            return self.two_step(c)
+        # On-chip logits are sized per compiled variant; split-KV means the buffer
+        # only needs to fit one segment. Refuse a case whose segment overflows the
+        # largest variant rather than corrupt memory.
+        assert candidate_fits(c["max_seq_len"], c["batch"]), (
+            f"candidate segment for max_seq_len={c['max_seq_len']} batch="
+            f"{c['batch']} exceeds largest variant {CANDIDATE_MAX_SEQ} "
+            f"(rebuild with FUSED_MAXSEQ_OVR)")
+        out_page, out_raw = self._alloc_out(c)
+        self._fused.fused_forward(
+            c["q_bhd"], c["kv_bf16"], c["weight"], c["seq_lens"],
+            c["page_table"], out_page, out_raw, c["block"],
+            c["max_seq_len"])
+        return out_page, out_raw
+
+
+# ===========================================================================
+# Correctness
+# ===========================================================================
+def _check_finite_valid(name, logits, seq_lens):
+    """Fail on any NaN or Inf in the VALID region (position < seq_len[b]) of the
+    logits — that is the region top-k selects from, so a non-finite value there
+    is real corruption.
+
+    Positions >= seq_len[b] are excluded, and the reason is NOT that they hold a
+    sentinel: the tilelang step allocates its output with `page_table.new_empty`
+    and never writes past seq_len[b], so the padding region is UNINITIALIZED
+    memory — whatever the caching allocator last left there (finite garbage from
+    a previous logits buffer, or +inf/NaN if a poisoned block gets reused). It is
+    excluded because it can never be selected: the golden masks pos>=seq_len to
+    -inf before topk (indexer.py:265) and the CUDA radix path takes seq_lens
+    directly. Checking it would make this oracle flaky on allocator state rather
+    than catch a real defect. (The -inf fill in fp8_paged_mqa_logits_torch,
+    indexer.py:219-225, is a property of that pytorch REFERENCE, not of the
+    kernel output checked here.)
+
+    NaN is checked explicitly (it compares false, so it can never be skipped)."""
+    S = logits.shape[1]
+    pos = torch.arange(S, device=logits.device).unsqueeze(0)
+    valid = pos < seq_lens.unsqueeze(1)
+    vf = logits[valid].float()
+    n_nan = int(torch.isnan(vf).sum().item())
+    n_inf = int(torch.isinf(vf).sum().item())
+    if n_nan or n_inf:
+        raise AssertionError(
+            f"{name}: {n_nan} NaN, {n_inf} Inf in valid region (pos<seq_len)")
+    return n_nan, n_inf
+
+
+def _row_set_equal(a, b):
+    """Per-row set equality via sorted torch.equal. The top-512 op is a SET
+    (torch.topk sorted=False fixes the selected SET, not the permutation). So
+    the correctness oracle compares the selected index SET per row, not the
+    order. Still bitwise / zero-tolerance — we only sort before equal."""
+    a_s, _ = torch.sort(a, dim=1)
+    b_s, _ = torch.sort(b, dim=1)
+    return torch.equal(a_s, b_s)
+
+
+def _selected_score_set(logits, raw):
+    """Sorted scores of the selected raw indices per row (guards against
+    'picked a wrong-but-equal-count set': the score MULTISET must also match).
+    Invalid (-1) slots map to -inf so padding lines up across candidates."""
+    b = raw.shape[0]
+    idx = raw.clamp(min=0).long()
+    gathered = torch.gather(logits, 1, idx)
+    gathered = gathered.masked_fill(raw < 0, float("-inf"))
+    vals, _ = torch.sort(gathered, dim=1)
+    return vals
+
+
+def check_correctness(runner, c):
+    """Correctness oracle (ZERO tolerance): candidate = fused_forward; golden =
+    logits -> topk_transform_512_pytorch_vectorized (torch.topk math). Both see
+    the SAME tilelang logits. Pass iff:
+      - per-row SET equality of out_page_indices AND out_raw_indices
+        (torch.equal after sort; torch.topk(sorted=False) fixes the SET only), AND
+      - the selected-score MULTISET matches (catches a wrong equal-size set), AND
+      - the intermediate logits have no NaN/Inf in the VALID region
+        (pos<seq_len; positions past seq_len are uninitialized allocator memory
+        that neither the golden nor the kernels can select — see
+        _check_finite_valid). NaN is checked explicitly (compares false, so it
+        can never be silently skipped).
+    Also checks the selected scores themselves are finite: for a fused candidate
+    whose logits stay on chip, those scores are the only observable evidence that
+    the on-chip logits were not corrupted.
+    No rel_tol, no boundary excusal — a set mismatch is a fail. ORDERED equality
+    is printed for the record only."""
+    logits = runner.logits(c)
+    torch.cuda.synchronize()
+    _check_finite_valid("logits", logits, c["seq_lens"])
+
+    g_page, g_raw = runner.golden(c, logits=logits)
+    f_page, f_raw = runner.fused_forward(c)
+    torch.cuda.synchronize()
+
+    page_ordered = torch.equal(f_page, g_page)
+    raw_ordered = torch.equal(f_raw, g_raw)
+    page_set = _row_set_equal(f_page, g_page)
+    raw_set = _row_set_equal(f_raw, g_raw)
+    # score multiset uses raw indices (absolute positions into logits)
+    g_scores = _selected_score_set(logits, g_raw)
+    f_scores = _selected_score_set(logits, f_raw)
+    score_set = torch.equal(g_scores, f_scores)
+    # Selected scores must be finite. For a candidate that keeps its logits on
+    # chip this is the only place corruption can surface, since the tensor
+    # checked above belongs to the baseline's logits step, not the candidate's.
+    # -inf marks an unfilled slot (raw<0) and is legitimate; NaN/+inf are not.
+    sel_finite = bool(
+        (torch.isfinite(f_scores) | torch.isneginf(f_scores)).all().item())
+    n_valid = int((g_page[0] >= 0).sum().item())
+
+    ok = page_set and raw_set and score_set and sel_finite
+    print("  [correctness]  golden=pytorch topk (zero tolerance, no rel_tol)")
+    print(f"    out_page_indices : set_equal={page_set}  "
+          f"(ordered={page_ordered}, valid[b0]={n_valid}/{TOPK})")
+    print(f"    out_raw_indices  : set_equal={raw_set}  (ordered={raw_ordered})")
+    print(f"    selected scores  : multiset_equal={score_set}  "
+          f"finite={sel_finite}")
+    print(f"    logits NaN/Inf   : none in valid region (pos<seq_len)")
+    return ok
+
+
+# ===========================================================================
+# Timing (CUDA events, warmup + repeat, median) + cold-L2 variant
+# ===========================================================================
+def make_l2_flusher():
+    props = torch.cuda.get_device_properties(torch.cuda.current_device())
+    l2_bytes = getattr(props, "l2_cache_size", 0) or (50 * 1024 * 1024)
+    buf = torch.empty(2 * l2_bytes // 4, dtype=torch.float32, device="cuda")
+    return (lambda: buf.zero_()), l2_bytes
+
+
+def cuda_time_ms(run, warmup=25, iters=100, flush=None):
+    for _ in range(warmup):
+        run()
+    torch.cuda.synchronize()
+    times = []
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    for _ in range(iters):
+        if flush is not None:
+            flush()
+        start.record()
+        run()
+        end.record()
+        end.synchronize()
+        times.append(start.elapsed_time(end))
+    return statistics.median(times)
+
+
+def run_shape(runner, batch, max_seq_len, warmup, iters, seed, c=None,
+              tag=None):
+    """Run correctness + timing for one case. `c` may be a pre-built case (long
+    tier via make_long_inputs); otherwise a short case is built from
+    (batch, max_seq_len)."""
+    if c is None:
+        c = make_inputs(batch, max_seq_len, seed=seed)
+    ml = c["max_seq_len"]
+    if tag is None:
+        tag = f"{batch}x{ml}"
+    sl = c["seq_lens"]
+    print(f"\n=== shape {tag}  (B={c['batch']} max_seq_len={ml} "
+          f"seq_lens[min={int(sl.min())},max={int(sl.max())}] "
+          f"np_total={c['np_total']} path={'naive' if ml <= TOPK else 'radix'}) ===")
+
+    ok = check_correctness(runner, c)
+
+    flush, l2_mb = make_l2_flusher()
+    base = lambda: runner.two_step(c)          # noqa: E731
+    fused = lambda: runner.fused_forward(c)    # noqa: E731
+
+    b_hot = cuda_time_ms(base, warmup, iters)
+    f_hot = cuda_time_ms(fused, warmup, iters)
+    b_cold = cuda_time_ms(base, warmup, iters, flush=flush)
+    f_cold = cuda_time_ms(fused, warmup, iters, flush=flush)
+    r_hot = f_hot / b_hot
+    r_cold = f_cold / b_cold
+
+    # An identity comparison (no candidate loaded -> fused_forward IS two_step)
+    # has a true ratio of 1.000; whatever it measures is the noise floor, not a
+    # speedup, so no promotion decision may be derived from it.
+    identity = runner._fused is None
+    undertimed = warmup < MIN_WARMUP or iters < MIN_ITERS
+
+    print("  [timing] median over "
+          f"{iters} iters (warmup {warmup}); baseline = two-step CUDA wall-clock")
+    print(f"    HOT  L2 : baseline {b_hot*1e3:8.2f} us | "
+          f"fused {f_hot*1e3:8.2f} us | fused/baseline {r_hot:.4f}")
+    print(f"    COLD L2 : baseline {b_cold*1e3:8.2f} us | "
+          f"fused {f_cold*1e3:8.2f} us | fused/baseline {r_cold:.4f}  "
+          f"(flush {l2_mb/1024/1024:.0f} MiB/iter)")
+    if undertimed:
+        print(f"    !! below the frozen timing spec "
+              f"(warmup>={MIN_WARMUP}, iters>={MIN_ITERS}) — these ratios are "
+              f"NOT reportable")
+    if identity:
+        print("    !! candidate == baseline (no fused module loaded): this is an "
+              "identity comparison, true ratio is 1.000")
+    print("    NOTE wall-clock includes host time; the primary speedup metric is "
+          "ncu pure-kernel time (run --ncu)")
+
+    # Promotion decision: real speedup (<0.95) => promote. Small-batch tie/slight
+    # regression is NOT a fail, just reported as 'tie'/'keep-two-step'. Suppressed
+    # entirely when the number cannot support a decision.
+    if identity:
+        decision = "n/a (cand==base)"
+    elif undertimed:
+        decision = "n/a (undertimed)"
+    elif r_hot <= 0.95:
+        decision = "promote (wall)"
+    elif r_hot <= 1.05:
+        decision = "tie"
+    else:
+        decision = "keep-two-step"
+    return {"shape": tag, "batch": c["batch"], "seq": ml, "ok": ok,
+            "b_hot": b_hot, "f_hot": f_hot, "r_hot": r_hot, "r_cold": r_cold,
+            "decision": decision, "identity": identity,
+            "undertimed": undertimed}
+
+
+# ===========================================================================
+# Pure-kernel time via Nsight Compute (the PRIMARY speedup metric per
+# CLAUDE.md: "ncu pure-kernel first, wall-clock as corroboration"). Wall-clock
+# on this node is dominated by host work — the tilelang python wrapper alone
+# costs ~50us per call — so a wall-clock win can hide a GPU-side regression.
+#
+# Baseline and candidate are profiled in SEPARATE ncu runs so kernel attribution
+# needs no name matching: everything the child launches inside the profiled
+# region belongs to the side being measured.
+# ===========================================================================
+NCU_BIN = os.environ.get("NCU_BIN", "ncu")
+NCU_REPS = 5
+
+
+def _build_case_for_tag(tag, seed=0):
+    """'64x1024' -> short case; 'long:64x16K' -> long varlen case."""
+    if tag.startswith("long:"):
+        b, a = tag[len("long:"):].lower().split("x")
+        return make_long_inputs(int(b), int(a.rstrip("k")) * 1024, seed=seed)
+    b, s = tag.lower().split("x")
+    return make_inputs(int(b), int(s), seed=seed)
+
+
+def ncu_child(side, tag, seed=0):
+    """Body of the profiled child process: warm up outside the profiled region,
+    then run only `side` inside it. Requires ncu --profile-from-start off."""
+    runner = Runner(use_fused=(side == "fused"))
+    c = _build_case_for_tag(tag, seed=seed)
+    if side == "fused" and runner._fused is not None:
+        # split-KV: the on-chip buffer fits one segment, so check per-segment.
+        assert candidate_fits(c["max_seq_len"], c["batch"]), (
+            f"candidate segment for max_seq_len={c['max_seq_len']} batch="
+            f"{c['batch']} exceeds largest variant {CANDIDATE_MAX_SEQ} "
+            f"(rebuild with FUSED_MAXSEQ_OVR)")
+    fn = runner.fused_forward if side == "fused" else runner.two_step
+    for _ in range(5):
+        fn(c)
+    torch.cuda.synchronize()
+    torch.cuda.cudart().cudaProfilerStart()
+    for _ in range(NCU_REPS):
+        fn(c)
+    torch.cuda.synchronize()
+    torch.cuda.cudart().cudaProfilerStop()
+
+
+def _ncu_kernel_us(side, tag, seed=0):
+    """Profile one side and return (total_us_per_rep, [(kernel, us_per_rep)]).
+    Returns (None, []) with the error text printed if ncu cannot run — per the
+    guardrail we report the failure instead of silently falling back."""
+    import csv as _csv
+    import io
+    import subprocess
+    cmd = [NCU_BIN, "--target-processes", "application-only",
+           "--profile-from-start", "off",
+           "--metrics", "gpu__time_duration.sum", "--csv",
+           sys.executable, os.path.abspath(__file__),
+           "--ncu-child", side, "--ncu-tag", tag, "--seed", str(seed)]
+    p = subprocess.run(cmd, capture_output=True, text=True)
+    if p.returncode != 0:
+        print(f"    [ncu] FAILED ({side} {tag}) rc={p.returncode}\n"
+              f"{(p.stderr or p.stdout)[-1500:]}")
+        return None, []
+    rows = [r for r in _csv.DictReader(
+        io.StringIO("\n".join(l for l in p.stdout.splitlines()
+                              if "," in l and not l.startswith("=="))))]
+    per = {}
+    unit = None
+    for r in rows:
+        name = (r.get("Kernel Name") or "").strip()
+        val = (r.get("Metric Value") or "").replace(",", "").strip()
+        unit = (r.get("Metric Unit") or unit or "").strip()
+        if not name or not val:
+            continue
+        try:
+            v = float(val)
+        except ValueError:
+            continue
+        per[name] = per.get(name, 0.0) + v
+    scale = {"nsecond": 1e-3, "usecond": 1.0, "msecond": 1e3}.get(unit, 1e-3)
+    per = {k: v * scale / NCU_REPS for k, v in per.items()}
+    return sum(per.values()), sorted(per.items(), key=lambda kv: -kv[1])
+
+
+def ncu_compare(tag, seed=0):
+    """Pure-kernel baseline-vs-candidate comparison for one shape tag."""
+    print(f"\n=== ncu pure-kernel {tag} ===")
+    b_us, b_per = _ncu_kernel_us("base", tag, seed=seed)
+    f_us, f_per = _ncu_kernel_us("fused", tag, seed=seed)
+    if b_us is None or f_us is None:
+        return None
+    for label, tot, per in (("baseline", b_us, b_per), ("candidate", f_us, f_per)):
+        print(f"  {label:9s} total {tot:8.2f} us/call")
+        for k, v in per[:4]:
+            print(f"      {v:8.2f} us  {k[:66]}")
+    ratio = f_us / b_us if b_us else float("nan")
+    verdict = ("GPU faster" if ratio <= 0.95
+               else "GPU tie" if ratio <= 1.05 else "GPU SLOWER")
+    print(f"  pure-kernel candidate/baseline = {ratio:.4f}  ({verdict})")
+    return {"tag": tag, "b_us": b_us, "f_us": f_us, "ratio": ratio,
+            "verdict": verdict}
+
+
+# ===========================================================================
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--shape", default=None,
+                    help="single shape 'BxSEQ', e.g. 64x1024 (default: repr 4)")
+    ap.add_argument("--full", action="store_true",
+                    help="full 12-shape promotion sweep (4 batch x 3 seq_len)")
+    ap.add_argument("--csv", default=None,
+                    help="append per-shape results to this benchmark CSV")
+    ap.add_argument("--warmup", type=int, default=25)
+    ap.add_argument("--iters", type=int, default=100)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--long", action="store_true",
+                    help="long-sequence tiers (16K/64K/256K varlen via "
+                         "longseq_inputs) instead of the short shapes")
+    ap.add_argument("--tie", action="store_true",
+                    help="adversarial exact-tie regression (AC-D): top-512 "
+                         "boundary inside a tie group, across split regimes")
+    ap.add_argument("--ncu", default=None,
+                    help="pure-kernel ncu comparison for these shape tags "
+                         "(comma separated, e.g. '64x1024,long:64x16K'); this "
+                         "is the PRIMARY speedup metric")
+    ap.add_argument("--ncu-child", default=None,
+                    help=argparse.SUPPRESS)   # internal: profiled child side
+    ap.add_argument("--ncu-tag", default=None, help=argparse.SUPPRESS)
+    args = ap.parse_args()
+
+    if args.ncu_child:
+        ncu_child(args.ncu_child, args.ncu_tag, seed=args.seed)
+        return
+
+    assert torch.cuda.is_available(), "CUDA required"
+    print("GPU:", torch.cuda.get_device_name(0),
+          "cc", torch.cuda.get_device_capability(0))
+
+    if args.ncu:
+        rows = [ncu_compare(t.strip(), seed=args.seed)
+                for t in args.ncu.split(",") if t.strip()]
+        rows = [r for r in rows if r]
+        print("\n" + "=" * 72)
+        print(f"{'shape':>14} | {'base_us':>9} | {'cand_us':>9} | "
+              f"{'pure_ratio':>10} | {'verdict':>11}")
+        for r in rows:
+            print(f"{r['tag']:>14} | {r['b_us']:>9.2f} | {r['f_us']:>9.2f} | "
+                  f"{r['ratio']:>10.4f} | {r['verdict']:>11}")
+        sys.exit(0)
+
+    runner = Runner()
+    results = []
+    if args.tie:
+        # AC-D regression: correctness only (no timing) on exact-tie boundaries
+        # across split regimes. Judge = multiset + valid-count (page-set FYI),
+        # per REVIEW R5. This is the standing net for the Round-9 combine bug.
+        n_pass = 0
+        for batch, mseq, ntop, note in TIE_CASES:
+            if not candidate_fits(mseq, batch):
+                print(f"\n=== SKIP tie B={batch} S={mseq} ntop={ntop} "
+                      f"(candidate variant too small)")
+                continue
+            c = make_tie_inputs(batch, mseq, ntop, seed=args.seed)
+            np_total = (c["max_seq_len"] + BLOCK - 1) // BLOCK
+            split = 1 if mseq <= TOPK else max(
+                1, min(np_total, (NUM_SM + batch // 2) // max(batch, 1)))
+            print(f"\n=== tie B={batch} S={mseq} ntop={ntop} split={split} "
+                  f"[{note}] ===")
+            ok = check_tie_correctness(runner, c)
+            n_pass += int(ok)
+            results.append({"shape": f"tie{batch}x{mseq}n{ntop}", "ok": ok,
+                            "r_hot": float("nan"), "r_cold": float("nan"),
+                            "decision": "tie-regression"})
+            del c
+            torch.cuda.empty_cache()
+        all_ok = all(r["ok"] for r in results)
+        print("\n" + "=" * 72)
+        print(f"TIE REGRESSION: {n_pass}/{len(results)} PASS  "
+              f"(multiset+count authoritative; page-set FYI)")
+        print(f"RESULT: correctness={'PASS' if all_ok else 'FAIL'}")
+        sys.exit(0 if all_ok else 1)
+    elif args.long:
+        # Cases within the candidate's compiled length range run candidate vs
+        # golden for real; longer ones have no variant yet, so they fall back to
+        # the two-step baseline as an ORACLE smoke (identity comparison — the
+        # ratio is a noise floor, flagged as such, not a speedup).
+        long_runner = Runner()
+        oracle_runner = Runner(use_fused=False)
+        for batch, avg_kv in LONG:
+            try:
+                c = make_long_inputs(batch, avg_kv, seed=args.seed)
+            except MemoryError as e:
+                print(f"\n=== SKIP long B={batch} avg_kv={avg_kv} (OOM guard): {e}")
+                continue
+            fits = candidate_fits(c["max_seq_len"], batch)
+            tag = f"{batch}x~{avg_kv // 1024}K"
+            results.append(
+                run_shape(long_runner if fits else oracle_runner,
+                          batch, None, args.warmup, args.iters,
+                          args.seed, c=c, tag=tag))
+    else:
+        shapes = FULL if args.full else REPRESENTATIVE
+        if args.shape:
+            b, s = args.shape.lower().split("x")
+            shapes = [(int(b), int(s))]
+        for batch, seq in shapes:
+            results.append(
+                run_shape(runner, batch, seq, args.warmup, args.iters,
+                          args.seed))
+
+    all_ok = all(r["ok"] for r in results)
+    print("\n" + "=" * 72)
+    print(f"{'shape':>10} | {'correct':>7} | {'ratio_hot':>9} | "
+          f"{'ratio_cold':>10} | {'decision':>16}")
+    for r in results:
+        print(f"{r['shape']:>10} | {'PASS' if r['ok'] else 'FAIL':>7} | "
+              f"{r['r_hot']:>9.4f} | {r['r_cold']:>10.4f} | "
+              f"{r.get('decision',''):>16}")
+    n_promote = sum(1 for r in results
+                    if str(r.get("decision", "")).startswith("promote"))
+    print(f"\nRESULT: correctness={'PASS' if all_ok else 'FAIL'}  "
+          f"({n_promote}/{len(results)} shapes promote on WALL-CLOCK)")
+    print("NOTE: ratios above are wall-clock, which on this node is dominated by "
+          "host time.\n      The primary speedup metric is ncu pure-kernel time: "
+          "run `--ncu <tags>`.\n      A wall-clock 'promote' with a pure-kernel "
+          "ratio > 1 is a host-side win, not a GPU win.")
+
+    if args.csv:
+        import csv
+        import time
+        newf = not os.path.exists(args.csv)
+        with open(args.csv, "a", newline="") as fh:
+            w = csv.writer(fh)
+            if newf:
+                w.writerow(["ts", "shape", "batch", "seq", "correct",
+                            "baseline_hot_us", "fused_hot_us", "ratio_hot",
+                            "ratio_cold", "decision"])
+            ts = time.strftime("%Y-%m-%d %H:%M:%S")
+            for r in results:
+                w.writerow([ts, r["shape"], r["batch"], r["seq"],
+                            "PASS" if r["ok"] else "FAIL",
+                            f"{r['b_hot']*1e3:.2f}", f"{r['f_hot']*1e3:.2f}",
+                            f"{r['r_hot']:.4f}", f"{r['r_cold']:.4f}",
+                            r.get("decision", "")])
+        print(f"[csv] appended {len(results)} rows -> {args.csv}")
+    sys.exit(0 if all_ok else 1)
+
+
+if __name__ == "__main__":
+    main()

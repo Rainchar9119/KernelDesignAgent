@@ -1,0 +1,82 @@
+--- baseline_upstream_698f70e9.cuh	2026-07-29 15:00:46.194618910 +0800
++++ cr_occupancy/candidate_cta_only_clean.cuh	2026-07-31 12:00:43.863727096 +0800
+@@ -454,8 +454,16 @@
+   uint32_t num_heads;
+ };
+ 
+-template <typename DType, typename PosT, bool kUsePDL, bool kRopeFirst = false, bool kHadamard = true>
+-Q_KERNEL void fused_q_indexer_rope_hadamard_quant(const __grid_constant__ FusedQIndexerRopeHadamardQuantParams params) {
++template <
++    typename DType,
++    typename PosT,
++    bool kUsePDL,
++    bool kRopeFirst = false,
++    bool kHadamard = true,
++    uint32_t kNumWarps = kFusedQNumWarps,
++    uint32_t kMinBlocksPerSM = 16>
++__global__ __launch_bounds__(kNumWarps* device::kWarpThreads, kMinBlocksPerSM) void fused_q_indexer_rope_hadamard_quant(
++    const __grid_constant__ FusedQIndexerRopeHadamardQuantParams params) {
+   using namespace device;
+ 
+   constexpr int64_t kHeadDim = 128;
+@@ -472,7 +480,7 @@
+ 
+   const auto warp_id = threadIdx.x / kWarpThreads;
+   const auto lane_id = threadIdx.x % kWarpThreads;
+-  const auto work_id = blockIdx.x * kFusedQNumWarps + warp_id;
++  const auto work_id = blockIdx.x * kNumWarps + warp_id;
+   // V4 ropes the trailing kRopeDim dims (kRopeFirst=false); V3.2 ropes the
+   // leading kRopeDim dims (kRopeFirst=true). Select the owning lanes per layout.
+   const bool is_rope_lane = kRopeFirst ? (lane_id < kRopeSize) : (lane_id >= kWarpThreads - kRopeSize);
+@@ -581,14 +589,35 @@
+     // q_fp8 row pointer: 128 fp8 / row = 32 OutStorage / row, one per lane.
+     auto out_row = static_cast<uint8_t*>(params.q_fp8) + work_id * kHeadDim;
+     result.store(out_row, lane_id);
+-    params.weights_out[work_id] = weight_val * params.weight_scale * scale;
++    // scale/weight are uniform across lanes; one lane writes the scalar, the
++    // other 31 same-address stores were waste. Bitwise identical.
++    if (lane_id == 0) params.weights_out[work_id] = weight_val * params.weight_scale * scale;
+   }
+ }
+ 
+ template <typename DType, bool kUsePDL, bool kRopeFirst = false, bool kHadamard = true>
+ struct FusedQIndexerRopeHadamardQuantKernel {
++  // 8 warps/block (256 threads) + resident-block cap 16: the upstream 4-warp
++  // (128-thread) block ran the schedulers at ~38% occupancy on the top
++  // long_scoreboard stall; doubling warps/block lifts occupancy to ~86% and is
++  // where the win comes from. Overridable at compile time; math unchanged.
++  static constexpr uint32_t kNumWarps =
++#ifdef Q_BLOCK_SIZE
++      Q_BLOCK_SIZE / device::kWarpThreads;
++#else
++      8;
++#endif
++  static constexpr uint32_t kBlocksPerSM =
++#ifdef Q_MIN_BLOCKS_PER_SM
++      Q_MIN_BLOCKS_PER_SM;
++#else
++      16;
++#endif
++  static constexpr uint32_t kBlockSize = kNumWarps * device::kWarpThreads;
++
+   template <typename PosT>
+-  static constexpr auto kernel = fused_q_indexer_rope_hadamard_quant<DType, PosT, kUsePDL, kRopeFirst, kHadamard>;
++  static constexpr auto kernel =
++      fused_q_indexer_rope_hadamard_quant<DType, PosT, kUsePDL, kRopeFirst, kHadamard, kNumWarps, kBlocksPerSM>;
+ 
+   static void forward(
+       const tvm::ffi::TensorView q_input,
+@@ -668,11 +697,11 @@
+         .num_heads = num_heads,
+     };
+     const auto total_works = batch_size * num_heads;
+-    const auto num_blocks = div_ceil(total_works, kFusedQNumWarps);
++    const auto num_blocks = div_ceil(total_works, kNumWarps);
+     const auto k_int32 = kernel<int32_t>;
+     const auto k_int64 = kernel<int64_t>;
+     const auto k = pos_dtype.is_type<int32_t>() ? k_int32 : k_int64;
+-    LaunchKernel(num_blocks, kFusedQBlockSize, device_.unwrap())  //
++    LaunchKernel(num_blocks, kBlockSize, device_.unwrap())  //
+         .enable_pdl(kUsePDL)(k, params);
+   }
+ };

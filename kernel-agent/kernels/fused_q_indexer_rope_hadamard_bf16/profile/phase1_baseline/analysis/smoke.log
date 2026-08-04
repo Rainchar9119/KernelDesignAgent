@@ -1,0 +1,4 @@
+==PROF== Connected to process 1104908 (/root/paddlejob/share-storage/gpfs/system-public/yuanzihang/uv-pythons/cpython-3.13.13-linux-x86_64-gnu/bin/python3.13)
+Could not import transformers.models.llama.modeling_llama; LlamaFlashAttention2 compat patch not applied.
+==PROF== Trying to shutdown target application
+==ERROR== The application returned an error code (19).

@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.3.4, pluggy-1.6.0 -- /usr/bin/python
+cachedir: .pytest_cache
+rootdir: /root/paddlejob/inference-public/yuanzihang/sglang/test
+configfile: pytest.ini
+plugins: typeguard-4.5.2, requests-mock-1.12.1, anyio-4.14.1
+collecting ... collected 10 items
+
+test/registered/kernels/ops/attention/test_dsv4_flashmla_norm_rope.py::test_flashmla_norm_rope_bf16_store[1] PASSED [ 10%]
+test/registered/kernels/ops/attention/test_dsv4_flashmla_norm_rope.py::test_flashmla_norm_rope_bf16_store[8] PASSED [ 20%]
+test/registered/kernels/ops/attention/test_dsv4_flashmla_norm_rope.py::test_flashmla_norm_rope_bf16_store[64] PASSED [ 30%]
+test/registered/kernels/ops/attention/test_dsv4_flashmla_norm_rope.py::test_flashmla_norm_rope_bf16_store[256] PASSED [ 40%]
+test/registered/kernels/ops/attention/test_dsv4_flashmla_norm_rope.py::test_flashmla_norm_rope_bf16_store[2048] PASSED [ 50%]
+test/registered/kernels/ops/attention/test_dsv4_flashmla_norm_rope.py::test_flashmla_norm_rope_fp8_store[1] PASSED [ 60%]
+test/registered/kernels/ops/attention/test_dsv4_flashmla_norm_rope.py::test_flashmla_norm_rope_fp8_store[8] PASSED [ 70%]
+test/registered/kernels/ops/attention/test_dsv4_flashmla_norm_rope.py::test_flashmla_norm_rope_fp8_store[64] PASSED [ 80%]
+test/registered/kernels/ops/attention/test_dsv4_flashmla_norm_rope.py::test_flashmla_norm_rope_fp8_store[256] PASSED [ 90%]
+test/registered/kernels/ops/attention/test_dsv4_flashmla_norm_rope.py::test_flashmla_norm_rope_fp8_store[2048] PASSED [100%]
+
+=============================== warnings summary ===============================
+../../../../../usr/local/lib/python3.12/dist-packages/_pytest/config/__init__.py:1441
+  /usr/local/lib/python3.12/dist-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+../../../../../usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63
+  /usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+    import pynvml  # type: ignore[import]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 10 passed, 2 warnings in 8.38s ========================

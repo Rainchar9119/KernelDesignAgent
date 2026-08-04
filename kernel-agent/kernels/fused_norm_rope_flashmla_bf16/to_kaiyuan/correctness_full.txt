@@ -1,0 +1,57 @@
+# Correctness: PR repo file vs pristine upstream/main (byte-parity + NaN/Inf + skipped-untouched)
+# baseline = upstream/main snapshot of fused_norm_rope_v2.cuh; candidate = PR-modified repo file
+# Verified 2026-08-03 on B200/sm_100 via verify_pr.py
+
+## FP8 quant path
+[OK ] extend N=   256 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=   256 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  1024 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  1024 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  2048 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  2048 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  4096 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  4096 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  8192 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  8192 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N= 16384 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N= 16384 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=   256 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=   256 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  1024 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  1024 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  2048 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  2048 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  4096 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  4096 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  8192 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  8192 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N= 16384 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N= 16384 perm=1 parity_diff=0 dirty=0 nan/inf=0
+ALL CORRECT
+
+## bf16-store path
+[OK ] extend N=   256 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=   256 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  1024 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  1024 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  2048 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  2048 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  4096 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  4096 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  8192 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N=  8192 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N= 16384 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] extend N= 16384 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=   256 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=   256 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  1024 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  1024 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  2048 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  2048 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  4096 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  4096 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  8192 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N=  8192 perm=1 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N= 16384 perm=0 parity_diff=0 dirty=0 nan/inf=0
+[OK ] decode N= 16384 perm=1 parity_diff=0 dirty=0 nan/inf=0
+ALL CORRECT

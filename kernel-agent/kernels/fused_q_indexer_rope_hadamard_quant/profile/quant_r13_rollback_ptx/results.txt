@@ -1,0 +1,8 @@
+     B   base(ns)   cand(ns)   ratio  branch
+     1       3200       3216   1.005  straight
+    64       3984       3728   0.936  straight
+   256       7216       6368   0.882  straight
+   512      11568       9792   0.846  grid-stride
+  1024      20256      16672   0.823  grid-stride
+  2048      37440      29728   0.794  grid-stride
+  4096      71952      55760   0.775  grid-stride

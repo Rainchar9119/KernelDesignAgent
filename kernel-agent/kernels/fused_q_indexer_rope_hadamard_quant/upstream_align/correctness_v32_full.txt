@@ -1,0 +1,16 @@
+Could not import transformers.models.llama.modeling_llama; LlamaFlashAttention2 compat patch not applied.
+[config] kRopeFirst=True kHadamard=False
+[baseline ] upstream_align/baseline_upstream_698f70e9.cuh
+[candidate] upstream_align/candidate_merged.cuh
+  B=1      q_fp8_bitwise=True(diff=0) weights_out_equal=True(diff=0) finite=True  PASS
+  B=8      q_fp8_bitwise=True(diff=0) weights_out_equal=True(diff=0) finite=True  PASS
+  B=64     q_fp8_bitwise=True(diff=0) weights_out_equal=True(diff=0) finite=True  PASS
+  B=128    q_fp8_bitwise=True(diff=0) weights_out_equal=True(diff=0) finite=True  PASS
+  B=256    q_fp8_bitwise=True(diff=0) weights_out_equal=True(diff=0) finite=True  PASS
+  B=512    q_fp8_bitwise=True(diff=0) weights_out_equal=True(diff=0) finite=True  PASS
+  B=1024   q_fp8_bitwise=True(diff=0) weights_out_equal=True(diff=0) finite=True  PASS
+  B=2048   q_fp8_bitwise=True(diff=0) weights_out_equal=True(diff=0) finite=True  PASS
+  B=4096   q_fp8_bitwise=True(diff=0) weights_out_equal=True(diff=0) finite=True  PASS
+  B=8192   q_fp8_bitwise=True(diff=0) weights_out_equal=True(diff=0) finite=True  PASS
+  B=16384  q_fp8_bitwise=True(diff=0) weights_out_equal=True(diff=0) finite=True  PASS
+RESULT: correctness=PASS

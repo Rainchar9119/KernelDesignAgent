@@ -1,0 +1,19 @@
+### fp8 bench @ Mon Aug  3 01:09:36 PM CST 2026
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+=== building (fp8_quant) ===
+Could not import transformers.models.llama.modeling_llama; LlamaFlashAttention2 compat patch not applied.
+
+=== timing [fp8_quant] (median ms, ratio=cand/base <1 is faster) ===
+extend N=   256  base=    8.37us  cand=    7.71us  ratio= 0.922
+extend N=  1024  base=    8.13us  cand=    7.98us  ratio= 0.982
+extend N=  2048  base=    9.86us  cand=    9.63us  ratio= 0.977
+extend N=  4096  base=   12.67us  cand=   10.83us  ratio= 0.855
+extend N=  8192  base=   17.82us  cand=   15.78us  ratio= 0.885
+extend N= 16384  base=   27.04us  cand=   22.94us  ratio= 0.849
+decode N=   256  base=    8.51us  cand=    7.58us  ratio= 0.891
+decode N=  1024  base=    8.61us  cand=    8.61us  ratio= 1.000
+decode N=  2048  base=   10.66us  cand=   10.62us  ratio= 0.997
+decode N=  4096  base=   12.67us  cand=   11.68us  ratio= 0.922
+decode N=  8192  base=   16.88us  cand=   16.80us  ratio= 0.995
+decode N= 16384  base=   27.04us  cand=   24.99us  ratio= 0.924

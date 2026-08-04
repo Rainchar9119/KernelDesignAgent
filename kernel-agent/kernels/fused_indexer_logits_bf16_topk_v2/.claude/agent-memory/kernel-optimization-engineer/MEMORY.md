@@ -1,0 +1,2 @@
+- [Stage split of the fused kernel](fused_stage_split.md) — where the ~13-16us fusion loss lives (GEMM vs radix), with the diag switches to reproduce it
+- [cp.async K pipeline result](cpasync_pipeline.md) — cp.async multi-stage K load: raises occupancy + cuts stalls, helps 8x256K ~8%, but mid shapes are grid-limited so flat

@@ -1,0 +1,33 @@
+# Performance: PR repo file vs pristine upstream/main
+# GPU: B200 / sm_100. NCU-style CUDA-event median, L2-flushed, 100 reps.
+# ratio = candidate / baseline  (<1.0 = candidate faster)
+# baseline = pristine upstream/main; candidate = PR-modified file. Via verify_pr.py
+# Verified 2026-08-03
+
+## FP8 quant path
+extend N=   256  base=    8.02us  cand=    7.58us  ratio= 0.946
+extend N=  1024  base=    8.16us  cand=    8.06us  ratio= 0.988
+extend N=  2048  base=   10.64us  cand=   10.66us  ratio= 1.002
+extend N=  4096  base=   12.70us  cand=   10.80us  ratio= 0.850
+extend N=  8192  base=   16.80us  cand=   15.78us  ratio= 0.939
+extend N= 16384  base=   27.04us  cand=   22.94us  ratio= 0.849
+decode N=   256  base=    8.61us  cand=    7.74us  ratio= 0.900
+decode N=  1024  base=    8.61us  cand=    8.16us  ratio= 0.948
+decode N=  2048  base=   10.66us  cand=   10.66us  ratio= 1.000
+decode N=  4096  base=   12.70us  cand=   12.69us  ratio= 0.999
+decode N=  8192  base=   17.06us  cand=   16.80us  ratio= 0.985
+decode N= 16384  base=   27.04us  cand=   24.98us  ratio= 0.924
+
+## bf16-store path
+extend N=   256  base=    8.58us  cand=    7.84us  ratio= 0.914
+extend N=  1024  base=    8.61us  cand=    8.58us  ratio= 0.996
+extend N=  2048  base=    9.70us  cand=    8.67us  ratio= 0.894
+extend N=  4096  base=   12.67us  cand=   10.62us  ratio= 0.838
+extend N=  8192  base=   16.77us  cand=   13.66us  ratio= 0.815
+extend N= 16384  base=   24.99us  cand=   18.85us  ratio= 0.754
+decode N=   256  base=    8.58us  cand=    8.61us  ratio= 1.004
+decode N=  1024  base=    8.61us  cand=    8.61us  ratio= 1.000
+decode N=  2048  base=    9.68us  cand=    9.63us  ratio= 0.995
+decode N=  4096  base=   12.67us  cand=   10.62us  ratio= 0.838
+decode N=  8192  base=   16.77us  cand=   14.69us  ratio= 0.876
+decode N= 16384  base=   25.98us  cand=   20.90us  ratio= 0.804

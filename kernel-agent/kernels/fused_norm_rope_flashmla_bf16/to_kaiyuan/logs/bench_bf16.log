@@ -1,0 +1,19 @@
+### bf16 bench @ Mon Aug  3 01:09:23 PM CST 2026
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+=== building (bf16_store) ===
+Could not import transformers.models.llama.modeling_llama; LlamaFlashAttention2 compat patch not applied.
+
+=== timing [bf16_store] (median ms, ratio=cand/base <1 is faster) ===
+extend N=   256  base=    8.03us  cand=    7.84us  ratio= 0.976
+extend N=  1024  base=    7.86us  cand=    8.61us  ratio= 1.096
+extend N=  2048  base=    9.66us  cand=    8.74us  ratio= 0.904
+extend N=  4096  base=   11.71us  cand=   10.62us  ratio= 0.907
+extend N=  8192  base=   16.80us  cand=   13.38us  ratio= 0.796
+extend N= 16384  base=   25.02us  cand=   19.17us  ratio= 0.766
+decode N=   256  base=    7.63us  cand=    7.62us  ratio= 0.998
+decode N=  1024  base=    8.61us  cand=    8.62us  ratio= 1.002
+decode N=  2048  base=    9.81us  cand=    8.98us  ratio= 0.915
+decode N=  4096  base=   12.70us  cand=   10.66us  ratio= 0.839
+decode N=  8192  base=   16.80us  cand=   14.75us  ratio= 0.878
+decode N= 16384  base=   25.31us  cand=   20.91us  ratio= 0.826

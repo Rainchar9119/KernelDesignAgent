@@ -1,0 +1,75 @@
+[warmup done]  batches=[32, 64, 128, 256, 512, 1024, 2048]
+
+[CONFIG block=64 spm=32]
+    B=   32  base  12.83/  6.93us  HOT 0.944  COLD 1.247  [ok]
+    B=   64  base  12.06/  8.64us  HOT 0.973  COLD 1.039  [ok]
+    B=  128  base  11.97/  8.64us  HOT 1.144  COLD 1.474  [ok]
+    B=  256  base  13.31/ 10.69us  HOT 1.159  COLD 1.207  [ok]
+    B=  512  base  17.47/ 15.78us  HOT 0.974  COLD 1.000  [ok]
+    B= 1024  base  26.13/ 25.02us  HOT 0.827  COLD 0.836  [ok]
+    B= 2048  base  43.68/ 41.41us  HOT 0.739  COLD 0.802  [ok]
+
+[CONFIG block=64 spm=16]
+    B=   32  base  12.19/  6.75us  HOT 0.993  COLD 1.280  [ok]
+    B=   64  base  12.45/  8.64us  HOT 0.954  COLD 1.119  [ok]
+    B=  128  base  11.52/  8.64us  HOT 1.000  COLD 1.237  [ok]
+    B=  256  base  12.93/ 10.69us  HOT 1.035  COLD 1.192  [ok]
+    B=  512  base  17.74/ 15.74us  HOT 0.904  COLD 0.947  [ok]
+    B= 1024  base  26.32/ 25.02us  HOT 0.815  COLD 0.918  [ok]
+    B= 2048  base  43.86/ 41.41us  HOT 0.761  COLD 0.900  [ok]
+
+[CONFIG block=128 spm=16]
+    B=   32  base  12.35/  6.74us  HOT 1.060  COLD 1.283  [ok]
+    B=   64  base  11.81/  8.64us  HOT 1.027  COLD 1.000  [ok]
+    B=  128  base  11.15/  8.64us  HOT 1.077  COLD 1.237  [ok]
+    B=  256  base  13.14/ 10.69us  HOT 0.952  COLD 1.000  [ok]
+    B=  512  base  17.78/ 15.07us  HOT 0.888  COLD 0.860  [ok]
+    B= 1024  base  26.67/ 25.02us  HOT 0.807  COLD 0.799  [ok]
+    B= 2048  base  43.95/ 41.41us  HOT 0.752  COLD 0.803  [ok]
+
+[CONFIG block=128 spm=8]
+    B=   32  base  12.42/  6.72us  HOT 0.992  COLD 1.286  [ok]
+    B=   64  base  11.74/  8.64us  HOT 1.027  COLD 1.000  [ok]
+    B=  128  base  11.90/  8.64us  HOT 0.989  COLD 1.020  [ok]
+    B=  256  base  12.66/ 10.69us  HOT 0.937  COLD 1.018  [ok]
+    B=  512  base  18.32/ 15.46us  HOT 0.851  COLD 0.957  [ok]
+    B= 1024  base  25.86/ 25.02us  HOT 0.839  COLD 0.918  [ok]
+    B= 2048  base  44.29/ 41.41us  HOT 0.764  COLD 0.901  [ok]
+
+[CONFIG block=256 spm=8]
+    B=   32  base  12.24/  6.78us  HOT 1.001  COLD 1.274  [ok]
+    B=   64  base  12.48/  8.64us  HOT 0.933  COLD 1.000  [ok]
+    B=  128  base  11.58/  8.64us  HOT 1.061  COLD 1.000  [ok]
+    B=  256  base  13.25/ 10.69us  HOT 0.907  COLD 1.000  [ok]
+    B=  512  base  17.50/ 15.04us  HOT 0.884  COLD 0.849  [ok]
+    B= 1024  base  26.37/ 25.02us  HOT 0.799  COLD 0.765  [ok]
+    B= 2048  base  43.50/ 41.41us  HOT 0.745  COLD 0.802  [ok]
+
+[CONFIG block=256 spm=4]
+    B=   32  base  12.16/  6.69us  HOT 0.987  COLD 1.292  [ok]
+    B=   64  base  11.62/  8.64us  HOT 1.025  COLD 1.000  [ok]
+    B=  128  base  11.14/  8.64us  HOT 1.052  COLD 1.004  [ok]
+    B=  256  base  12.90/ 10.69us  HOT 0.918  COLD 1.024  [ok]
+    B=  512  base  17.68/ 15.10us  HOT 0.898  COLD 0.979  [ok]
+    B= 1024  base  26.85/ 25.02us  HOT 0.802  COLD 0.918  [ok]
+    B= 2048  base  43.34/ 41.41us  HOT 0.778  COLD 0.901  [ok]
+
+========================================================================
+SUMMARY  (cand/baseline direct ratio, HOT | lower=faster; * best/col)
+========================================================================
+config                B32      B64     B128     B256     B512    B1024    B2048
+b64_s32            0.944*   0.973    1.144    1.159    0.974    0.827    0.739*
+b64_s16            0.993    0.954    1.000    1.035    0.904    0.815    0.761 
+b128_s16           1.060    1.027    1.077    0.952    0.888    0.807    0.752 
+b128_s8            0.992    1.027    0.989*   0.937    0.851*   0.839    0.764 
+b256_s8            1.001    0.933*   1.061    0.907*   0.884    0.799*   0.745 
+b256_s4            0.987    1.025    1.052    0.918    0.898    0.802    0.778 
+
+Best HOT config per shape:
+  B=   32 -> (64, 32)
+  B=   64 -> (256, 8)
+  B=  128 -> (128, 8)
+  B=  256 -> (256, 8)
+  B=  512 -> (128, 8)
+  B= 1024 -> (256, 8)
+  B= 2048 -> (64, 32)

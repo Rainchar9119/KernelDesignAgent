@@ -1,0 +1,117 @@
+===== Stall hotspots for decode_4096 =====
+Total distinct (file, line) entries: 29
+
+Rank      Total File                            Line  Breakdown (stall: count)
+------------------------------------------------------------------------------------------------------------------------------------------------------
+   0        142 fused_norm_rope_v2.cuh           239  long_scoreboard: 113, wait: 11, selected: 6, short_scoreboard: 5, not_selected: 5, mio_throttle: 1, math_pipe_throttle: 1
+   1        115 fused_norm_rope_v2.cuh           257  long_scoreboard: 111, wait: 4
+   2         43 fused_norm_rope_v2.cuh           205  no_instructions: 42, mio_throttle: 1
+   3         31 warp.cuh                          32  short_scoreboard: 22, wait: 9
+   4         20 fused_norm_rope_v2.cuh           227  short_scoreboard: 18, math_pipe_throttle: 1, not_selected: 1
+   5         18 fused_norm_rope_v2.cuh           309  drain: 13, wait: 2, branch_resolving: 2, selected: 1
+   6         17 fused_norm_rope_v2.cuh           238  short_scoreboard: 10, wait: 3, mio_throttle: 2, selected: 2
+   7         15 fused_norm_rope_v2.cuh           269  barrier: 10, short_scoreboard: 4, wait: 1
+   8          9 fused_norm_rope_v2.cuh           270  wait: 8, not_selected: 1
+   9          7 fused_norm_rope_v2.cuh           296  long_scoreboard: 6, wait: 1
+  10          4 fused_norm_rope_v2.cuh           267  short_scoreboard: 3, not_selected: 1
+  11          4 fused_norm_rope_v2.cuh           255  wait: 2, not_selected: 1, dispatch_stall: 1
+  12          4 vec.cuh                           86  wait: 2, dispatch_stall: 1, selected: 1
+  13          3 fused_norm_rope_v2.cuh           229  short_scoreboard: 1, wait: 1, branch_resolving: 1
+  14          3 fused_norm_rope_v2.cuh           275  wait: 1, not_selected: 1, selected: 1
+  15          3 fused_norm_rope_v2.cuh           285  wait: 1, math_pipe_throttle: 1, selected: 1
+  16          3 fused_norm_rope_v2.cuh           307  selected: 3
+  17          2 fused_norm_rope_v2.cuh           256  wait: 2
+  18          2 fused_norm_rope_v2.cuh           245  wait: 1, selected: 1
+  19          2 fused_norm_rope_v2.cuh           276  wait: 2
+  20          2 fused_norm_rope_v2.cuh           241  dispatch_stall: 2
+  21          2 fused_norm_rope_v2.cuh           306  no_instructions: 1, branch_resolving: 1
+  22          1 fused_norm_rope_v2.cuh           240  long_scoreboard: 1
+  23          1 fused_norm_rope_v2.cuh           263  not_selected: 1
+  24          1 fused_norm_rope_v2.cuh           287  not_selected: 1
+  25          1 fused_norm_rope_v2.cuh           268  dispatch_stall: 1
+  26          1 fused_norm_rope_v2.cuh           262  selected: 1
+  27          1 fused_norm_rope_v2.cuh           223  selected: 1
+  28          1 fused_norm_rope_v2.cuh           266  selected: 1
+
+
+===== Per-stall-type top lines =====
+
+--- long_scoreboard ---
+       113  fused_norm_rope_v2.cuh:239
+       111  fused_norm_rope_v2.cuh:257
+         6  fused_norm_rope_v2.cuh:296
+         1  fused_norm_rope_v2.cuh:240
+
+--- short_scoreboard ---
+        22  warp.cuh:32
+        18  fused_norm_rope_v2.cuh:227
+        10  fused_norm_rope_v2.cuh:238
+         5  fused_norm_rope_v2.cuh:239
+         4  fused_norm_rope_v2.cuh:269
+         3  fused_norm_rope_v2.cuh:267
+         1  fused_norm_rope_v2.cuh:229
+
+--- wait ---
+        11  fused_norm_rope_v2.cuh:239
+         9  warp.cuh:32
+         8  fused_norm_rope_v2.cuh:270
+         4  fused_norm_rope_v2.cuh:257
+         3  fused_norm_rope_v2.cuh:238
+         2  fused_norm_rope_v2.cuh:256
+         2  fused_norm_rope_v2.cuh:255
+         2  vec.cuh:86
+         2  fused_norm_rope_v2.cuh:276
+         2  fused_norm_rope_v2.cuh:309
+
+--- math_pipe_throttle ---
+         1  fused_norm_rope_v2.cuh:239
+         1  fused_norm_rope_v2.cuh:227
+         1  fused_norm_rope_v2.cuh:285
+
+--- mio_throttle ---
+         2  fused_norm_rope_v2.cuh:238
+         1  fused_norm_rope_v2.cuh:239
+         1  fused_norm_rope_v2.cuh:205
+
+--- not_selected ---
+         5  fused_norm_rope_v2.cuh:239
+         1  fused_norm_rope_v2.cuh:227
+         1  fused_norm_rope_v2.cuh:267
+         1  fused_norm_rope_v2.cuh:255
+         1  fused_norm_rope_v2.cuh:270
+         1  fused_norm_rope_v2.cuh:275
+         1  fused_norm_rope_v2.cuh:263
+         1  fused_norm_rope_v2.cuh:287
+
+--- dispatch_stall ---
+         2  fused_norm_rope_v2.cuh:241
+         1  fused_norm_rope_v2.cuh:255
+         1  vec.cuh:86
+         1  fused_norm_rope_v2.cuh:268
+
+--- drain ---
+        13  fused_norm_rope_v2.cuh:309
+
+--- no_instructions ---
+        42  fused_norm_rope_v2.cuh:205
+         1  fused_norm_rope_v2.cuh:306
+
+--- selected ---
+         6  fused_norm_rope_v2.cuh:239
+         3  fused_norm_rope_v2.cuh:307
+         2  fused_norm_rope_v2.cuh:238
+         1  fused_norm_rope_v2.cuh:245
+         1  vec.cuh:86
+         1  fused_norm_rope_v2.cuh:275
+         1  fused_norm_rope_v2.cuh:285
+         1  fused_norm_rope_v2.cuh:309
+         1  fused_norm_rope_v2.cuh:262
+         1  fused_norm_rope_v2.cuh:223
+
+--- branch_resolving ---
+         2  fused_norm_rope_v2.cuh:309
+         1  fused_norm_rope_v2.cuh:229
+         1  fused_norm_rope_v2.cuh:306
+
+--- barrier ---
+        10  fused_norm_rope_v2.cuh:269
