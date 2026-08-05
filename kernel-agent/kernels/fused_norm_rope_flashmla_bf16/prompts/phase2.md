@@ -89,11 +89,11 @@ ncu 纯核以 kernel Duration / `dram__bytes` 吞吐为准，`ncu` 加 `--target
 - 每个主要优化方向保留 NCU 剖析记录。
 - 积极评估并使用相关的 NVIDIA B200 / sm_100a / CUDA 13.2 特性：
   TMA, TMEM, tcgen05, warp specialization, persistent scheduling, PDL, 宽向量化访存(128-bit)。
-- 用 KernelWiki 做研究：`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`。
+- 用 KernelWiki 做研究：`skills/KernelWiki/`。
   **每轮 NCU 出瓶颈后都要回查**（非开局一次性动作），并在 `PROGRESS.md` 本轮日志的「KernelWiki 回查」字段
   记录查了哪些页、每张页的手法及其前提在本 kernel 是否成立、采纳或拒绝的理由。
 - 用 ncu-report-skill 做 Nsight Compute 剖析与瓶颈分析：
-  `/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/ncu-report-skill/`
+  `skills/ncu-report-skill/`
 
 ### 硬性护栏（反 reward-hacking，违反即任务失败）
 

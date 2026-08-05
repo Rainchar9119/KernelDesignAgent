@@ -6,7 +6,7 @@ metadata:
 ---
 
 Phase 2/3 的每一轮，NCU 定位出主瓶颈后**必须按该瓶颈类别回查 KernelWiki**
-（`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`），
+（`skills/KernelWiki/`），
 并把结果写进该 kernel `PROGRESS.md` 本轮日志的**「KernelWiki 回查」必填字段**：
 `本轮 NCU 的具体瓶颈（指标名+数值）→ 查了哪些页（列路径）→ 每张读过的页一句「手法 + 其前提在本
 kernel 成立/不成立」→ 采纳还是拒绝、理由`。那句**前提成立性**是承重点——抄不出来，必须真打开页才写得出。

@@ -18,7 +18,7 @@
 - 每轮结束必须更新 `PROGRESS.md`，**七个字段缺一不可**：当前 phase、本轮改动、
   ncu 证据（本轮主瓶颈类别）、**KernelWiki 回查**、kernel/baseline 比值、正确性是否通过、下一步。
   「KernelWiki 回查」= 每轮 NCU 出瓶颈后按该瓶颈类别回查 KernelWiki
-  （`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`），
+  （`skills/KernelWiki/`），
   记录查了哪些页 / 每张读过的页一句「手法 + 其前提在本 kernel 成立/不成立」/ 采纳还是拒绝、理由。
   未命中也要列页，且需≥2 条检索路径；只查 `queries/by-problem.md` 那几个宽类别不算回查。
   **沿用开局静态方向清单 ≠ 回查**。

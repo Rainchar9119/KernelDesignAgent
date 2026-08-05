@@ -40,7 +40,7 @@
 > 「KernelWiki 回查」写法：`本轮 NCU 的具体瓶颈（指标名+数值，不是宽类别）→ 查了哪些页（列路径）
 > → 每张读过的页一句话：它的手法 + 该手法的前提在本 kernel 成立/不成立 → 采纳还是拒绝、理由`。
 > 那句**前提成立性**是本字段的重点：写不出来就说明没真读页（reviewer 会打开页抽查核对）。
-> KernelWiki 路径：`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`。
+> KernelWiki 路径：`skills/KernelWiki/`。
 > **未命中也必须列出查过的页**，且需≥2 条检索路径（索引表 + `query.py`/`grep_wiki.py` 带本 kernel 具体术语）；
 > 只 grep `queries/by-problem.md` 那 7 个宽类别 ≠ 回查——深度在 48 张 wiki 页和 2179 张 PR 页里。
 > 写「同上轮」「已在 Phase 1 查过」= 未完成。
@@ -777,7 +777,7 @@ split-kv，仍不 promote。
   与报告自报的 26.3us/10.1us、72%/28%、occupancy、SMEM、warp-cycles **逐项一致，无编造**。
   ~36.4us 纯 kernel 属实。
 
-- **KernelWiki 引用属实**：真库在 `mlsys2026-flashinfer-contest/skills/KernelWiki/wiki`
+- **KernelWiki 引用属实**：真库在 `skills/KernelWiki/wiki`
   （memory 里指的 `kernel-design-agents/.../KernelWiki` 是空目录，废路径）。所引 10 页全部存在；
   抽查断言：`pdl-gdc.md` 确写「PDL enabled by default on SM100」；`sparse-mla.md` 确把任务画成
   「Lightning Indexer 打分 + top-K 两阶段」。选型依据未杜撰。

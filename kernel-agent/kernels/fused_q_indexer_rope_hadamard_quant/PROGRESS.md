@@ -42,7 +42,7 @@
 > 「KernelWiki 回查」写法：`本轮 NCU 的具体瓶颈（指标名+数值，不是宽类别）→ 查了哪些页（列路径）
 > → 每张读过的页一句话：它的手法 + 该手法的前提在本 kernel 成立/不成立 → 采纳还是拒绝、理由`。
 > 那句**前提成立性**是本字段的重点：写不出来就说明没真读页（reviewer 会打开页抽查核对）。
-> KernelWiki 路径：`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`。
+> KernelWiki 路径：`skills/KernelWiki/`。
 > **未命中也必须列出查过的页**，且需≥2 条检索路径（索引表 + `query.py`/`grep_wiki.py` 带本 kernel 具体术语）；
 > 只 grep `queries/by-problem.md` 那 7 个宽类别 ≠ 回查——深度在 48 张 wiki 页和 2179 张 PR 页里。
 > 写「同上轮」「已在 Phase 1 查过」= 未完成。
@@ -357,7 +357,7 @@
     （grid-stride 每次 `+= gridDim.x*8` 亦然）。故 freqs 的 block 级共享无需退化路径。
 
 - **KernelWiki 回查（本轮必填字段；起独立 Explore 子 agent 按上述新瓶颈类别逐项查，覆盖 wiki 48 页中相关 30+ 页 + `sources/`）**：
-  路径 `/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`。
+  路径 `skills/KernelWiki/`。
   **留证前提**：`scripts/query.py`/`get_page.py` 本环境跑不起来（`ModuleNotFoundError: No module named 'yaml'`），
   改用 `find`+`grep` 直扫 `wiki/`、`sources/`、`queries/`。
 
@@ -709,7 +709,57 @@
 - **诊断/结论**：定型 candidate 复测通过，性能与正确性均与既往一致，无回归。任务保持定型态。
 - **下一步**：等用户审核。
 
-### Round 5 (Phase 2 / 方向 A：复用 bf16 单一体) —— 对照 bf16 姊妹版，验证「去分流 + 单一体 grid-stride + 软件流水预取」
+### Round 16 (PR 收尾 / 按 reviewer 要求把 diff 缩到一行) —— 开源仓库 sglang PR #32755
+
+- **背景**：本任务的优化已进上游 PR https://github.com/sgl-project/sglang/pull/32755
+  （分支 `perf-dsv4-indexer-quant-scheduling`，改的是**开源仓库** `…/yuanzihang/sglang`，
+  非内部 `baidu/wenxin/sglang`）。reviewer **DarkSharpness 已 approve**，但最新一条评论（8-03）要求
+  **进一步精简 diff**：「唯一需要的改动就是改默认 `kFusedQBlockSize`」，并提示 128→256 对其他变体也可能有益。
+  评审轨迹：persistent grid-stride 路径经消融证明比纯 CTA 调大慢 ~3%，已在 PR 中 drop；
+  `Q_BLOCK_SIZE` 编译开关已按 reviewer 上一条要求换成具名常量——本轮再收口成纯一行。
+- **改了什么（开源仓库 kernel 文件）**：`python/sglang/kernels/jit/csrc/deepseek_v4/main_norm_rope.cuh`
+  相对 upstream/main 的净 diff 缩成**仅一处**：`kFusedQBlockSize` 128→**256**（附一段注释说明占用收益）。
+  删除了：新增的 `kFusedQuant*` 具名常量组、quant kernel 的 `kNumWarps/kMinBlocksPerSM` 模板参 +
+  显式 `__launch_bounds__`、`FusedQIndexerRopeHadamardQuantKernel` 里的 launch 常量、lane0 单写 `weights_out`。
+  → **回归用 `Q_KERNEL` 宏**（`__launch_bounds__(kFusedQBlockSize, 16)`），block=256 自然由共享常量驱动。
+- **技术判断（三个 Q kernel 共用 `kFusedQBlockSize`）**：`kFusedQBlockSize`/`kFusedQNumWarps` 被
+  `fused_q_norm_rope`、`fused_q_indexer_rope_hadamard_quant`、`fused_q_indexer_rope_hadamard_fp4_quant`
+  三个 kernel 共用（`s_rope[kFusedQNumWarps]`、`work_id=blockIdx*kFusedQNumWarps`、launcher `div_ceil(.,kFusedQNumWarps)`
+  全部随之自适应，无写死 128 的 static_assert）。改共享常量 = 三个 kernel 一起变 256——**这正是 reviewer
+  说的「可能对其他变体有益」**，且代码层面安全（warp 数、shared mem、grid 全部按常量推导，无破坏）。
+  lane0 单写虽 bitwise 恒等，但属独立 micro-opt、不在「一行 diff」范围内，按 reviewer 意图一并去掉。
+- **正确性（本机复现，对齐内部 baseline 作 golden）**：candidate 直接取开源仓库这份 block256 kernel
+  （md5 `8ce34fcf`），`harness.py --sweep` B∈{1,8,64,256} + 单测 B∈{512,1024,2048,4096,8192}
+  **全部 q_fp8 逐字节 `torch.equal`=True（0 字节不等）、weights_out 逐元素=True、无 NaN/Inf**，
+  `RESULT: correctness=PASS`。（去掉 lane0 单写不影响正确性——原本 32 lane 同址同值写，回到全写仍逐字节一致。）
+- **ncu 关键证据（主瓶颈类别 = 无新，纯 launch 配置收口）**：ncu 纯 kernel（interleave BASE/CAND，
+  `gpu__time_duration.sum`，`--target-processes application-only`，launch-skip5 count6 取中位，GPU2 空闲）：
+  | B | base(ns) | cand(ns) | 比值 | 分支 |
+  |---:|---:|---:|:---:|:--|
+  | 64   | 4128  | 4080  | 0.988 | 直线体 |
+  | 256  | 7584  | 6736  | **0.888** | 直线体 |
+  | 512  | 11808 | 10768 | 0.912 | grid-stride*（见注） |
+  | 1024 | 20352 | 17312 | 0.851 | grid-stride* |
+  | 2048 | 37328 | 30464 | 0.816 | grid-stride* |
+  | 4096 | 71648 | 56272 | 0.785 | grid-stride* |
+  *注：开源 PR 版**已 drop persistent grid-stride**，大 batch 靠 block256 + `div_ceil` 多波覆盖；
+  测出的 branch 标签来自 measure.py 旧口径，实际大 batch 收益纯来自 CTA 调大 + 多波，非 grid-stride。
+  与 PR 描述「最高 ~22% @ 大 batch」「B=1 launch-bound 打平/略负」一致。
+- **KernelWiki 回查**：本轮为 PR 收口（删代码、缩 diff），未引入新优化手法、无新 NCU 瓶颈类别；
+  block256 抬占用的手法（occupancy / low-sm-utilization）Round 6~9 已查 `wiki/patterns/tail-effect.md`、
+  `wiki/techniques/persistent-kernels.md`、tuning guide 的 64 warp/SM 上限，结论沿用。检索路径 2 条：
+  (a) by-problem「low occupancy / scheduler underfill」→ occupancy 手法（本 PR 即用 block 调大兑现）；
+  (b) by-symptom「long_scoreboard 主导 + 低占用」→ 加并行度掩延迟（已落地）。无新可迁移手法。
+- **kernel 与 baseline 时间及比值**：见上表（B=256≈0.89、B=512≈0.91、B=1024≈0.85、B=2048≈0.82、
+  B=4096≈0.79、B=64 打平），与既往定型态在噪声内一致。
+- **正确性是否通过**：**全区间 bitwise PASS**（见上）。
+- **诊断/结论**：按 reviewer 最新要求，开源 PR 的净 diff 收口成「仅改默认 `kFusedQBlockSize` 128→256」一行，
+  三个 Q kernel 共享此常量、一并受益且代码安全；正确性全区间 bitwise、性能与定型态一致。
+  **改动仅落在开源仓库 `…/yuanzihang/sglang`，未动内部库。**
+- **下一步**：把这份一行 diff 提交到 PR 分支 `perf-dsv4-indexer-quant-scheduling` 回复 reviewer
+  （等用户确认是否 commit/push——按护栏 push 需用户明确同意）。CI 的 `run-ci` label 仍需 maintainer 加。
+
+ —— 对照 bf16 姊妹版，验证「去分流 + 单一体 grid-stride + 软件流水预取」
 
 - **动机（用户指示）**：参考已收尾的姊妹算子 `fused_q_indexer_rope_hadamard_bf16`——它**不用分流**，
   是单一 kernel 体（永远 grid-stride + 软件流水预取，launcher `num_blocks=min(rows_blocks, wave_blocks)`）。

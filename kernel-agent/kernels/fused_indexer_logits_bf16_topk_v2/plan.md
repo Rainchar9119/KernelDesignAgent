@@ -146,7 +146,7 @@ occupancy / SMEM 容量，streaming 档大概率是 merge 的 sync + 分支发�
 launch 开销与 partial 写带宽。开局那张方向清单对后面几轮是过期的，照着它执行**不算**回查。
 
 **KernelWiki 位置与检索方式**：
-`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`
+`skills/KernelWiki/`
 
 ```bash
 python3 scripts/query.py "<瓶颈的自然语言描述>" [--tag <t>] [--type <kernel|technique|pr|...>]

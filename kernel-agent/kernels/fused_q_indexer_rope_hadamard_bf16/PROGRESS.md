@@ -37,7 +37,7 @@
 > 「KernelWiki 回查」写法：`本轮 NCU 的具体瓶颈（指标名+数值，不是宽类别）→ 查了哪些页（列路径）
 > → 每张读过的页一句话：它的手法 + 该手法的前提在本 kernel 成立/不成立 → 采纳还是拒绝、理由`。
 > 那句**前提成立性**是本字段的重点：写不出来就说明没真读页（reviewer 会打开页抽查核对）。
-> KernelWiki 路径：`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`。
+> KernelWiki 路径：`skills/KernelWiki/`。
 > **未命中也必须列出查过的页**，且需≥2 条检索路径（索引表 + `query.py`/`grep_wiki.py` 带本 kernel 具体术语）；
 > 只 grep `queries/by-problem.md` 那 7 个宽类别 ≠ 回查——深度在 48 张 wiki 页和 2179 张 PR 页里。
 > 写「同上轮」「已在 Phase 1 查过」= 未完成。
@@ -388,7 +388,7 @@
   - 管线利用率：ALU 40% / LSU 45% / **FMA 仅 23%** / XU(SFU) 5.9% → **无任何计算管线接近饱和**。
   - Achieved Occupancy 71.4%（理论 100%），被 reg 31 → Block Limit Registers 16 卡住。
   - ncu 唯一"计算"提示：4.19M fused + 38.8M non-fused FP32，转 FMA 理论 FP32 +45%——见下核实，不可兑现。
-- **KernelWiki 回查**：`/root/.../mlsys2026-flashinfer-contest/skills/KernelWiki/`。
+- **KernelWiki 回查**：`skills/KernelWiki/`。
   具体瓶颈 = long_scoreboard 41%(等 load) + FMA 管线仅 23%/ALU 40%(计算不饱和)。
   两条检索路径：① 索引 `queries/by-technique.md` + `wiki/patterns/` 目录；
   ② `scripts/query.py` / `scripts/grep_wiki.py` 跑本 kernel 术语

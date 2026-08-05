@@ -31,7 +31,7 @@ weight scaling），在**保证输出与原算子完全一致**的前提下，**
   `q_fp8` 是量化输出，与原 kernel 用**相同的 fp32 累加 + 相同 scale 公式 + 相同 fp8 rounding**
   时应逐字节一致；不许用"绝大多数字节相等 / 放宽比较"蒙混。
 - 不许把自己的新 kernel 设成自己的参照；baseline 永远是"当前原始 kernel"的墙钟时间。
-- **每轮 NCU 出瓶颈后必须回查 KernelWiki**（`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`），
+- **每轮 NCU 出瓶颈后必须回查 KernelWiki**（`skills/KernelWiki/`），
   并把结果写进 `PROGRESS.md` 本轮的「KernelWiki 回查」字段：本轮具体瓶颈 → 查了哪些页 →
   每张读过的页一句「手法 + 其前提在本 kernel 成立/不成立」→ 采纳还是拒绝、理由。
   未命中也要列出查过的页，且需≥2 条检索路径；只查 `queries/by-problem.md` 那几个宽类别不算回查。

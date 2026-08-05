@@ -89,7 +89,7 @@
 
 - AC-7: **流程 — 每轮 NCU 出瓶颈后必须回查 KernelWiki 并留证**
   Phase 2 / Phase 3 的每一轮，在 NCU 定位出当前主瓶颈后，必须按**该瓶颈类别**回查 KernelWiki
-  （`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`），
+  （`skills/KernelWiki/`），
   并把结果写进 `PROGRESS.md` 本轮日志的「KernelWiki 回查」字段。
   - Positive Tests（应 PASS）：
     - 本轮日志含「KernelWiki 回查」字段，内容为
@@ -159,8 +159,8 @@ sglang 源码）的 patch 方案（本目录副本）。各 shape 正确且达�
   `store.cuh:55` — 同款 fp8 scale 公式（`max(1e-4,abs_max)/FP8_E4M3_MAX`）参照。
 - `kernels/fused_q_indexer_rope_hadamard_bf16/`（同族 bf16 版，已实例化）— harness/candidate/profile
   目录结构、memory 环境坑、pytorch golden 写法参考（本任务是它的 fp8 量化姊妹版）。
-- KernelWiki：`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`
-- ncu-report-skill：`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/ncu-report-skill/`
+- KernelWiki：`skills/KernelWiki/`
+- ncu-report-skill：`skills/ncu-report-skill/`
 
 ## Dependencies and Sequence
 

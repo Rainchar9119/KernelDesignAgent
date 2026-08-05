@@ -49,7 +49,7 @@
    - **查检索深度**：瓶颈是否落到本 kernel 的具体形态（指标名+数值），而不是只有宽类别；
      检索是否≥2 条路径。若全轮只 grep 了 `queries/by-problem.md`（仅 7 个宽类别）、
      未用本 kernel 具体术语走过 `query.py` / `grep_wiki.py` → 判 ISSUE（回查过浅）。
-     KernelWiki 位于 `/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`，
+     KernelWiki 位于 `skills/KernelWiki/`，
      深度在 48 张 wiki 页和 2179 张 PR 页里；你自己复现检索时若报 `No module named yaml`，
      换 `/usr/local/bin/python`。
    - 未命中（KernelWiki 无相关条目）是**可接受结论**，但必须列出查过哪些页、且≥2 条检索路径

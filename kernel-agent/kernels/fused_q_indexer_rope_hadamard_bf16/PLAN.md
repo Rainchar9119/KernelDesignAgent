@@ -58,10 +58,10 @@ float↔bf16 往返与同步。
 通过后再进 Phase 1。
 
 ## Phase 1 — Research（研究）
-1. Read: `/root/paddlejob/share-storage/gpfs/system-public/yuanzihang/mlsys2026-flashinfer-contest/skills/ncu-report-skill/SKILL.md`
+1. Read: `skills/ncu-report-skill/SKILL.md`
    严格按它「先剖析、再诊断、后优化」的方法论，用它的流程对当前 kernel 做 kernel 级
    ncu 剖析（`load_jit` 需带 `-lineinfo`，必要时在 JIT flags 里加）。
-2. 查 KernelWiki：`/root/paddlejob/share-storage/gpfs/system-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`
+2. 查 KernelWiki：`skills/KernelWiki/`
    关于 RoPE / Hadamard / bf16 elementwise 融合 / SM100(Blackwell) 访存与 occupancy /
    向量化 128-bit 访存 / PDL(programmatic dependent launch) 的知识。
 3. 记录当前 kernel 的瓶颈画像（DRAM 吞吐 vs 峰值、occupancy、是否 latency-bound、

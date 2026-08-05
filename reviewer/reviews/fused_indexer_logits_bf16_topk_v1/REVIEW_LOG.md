@@ -86,7 +86,7 @@ Phase 1 = research/plan，不写 kernel、无新性能数字。审的是：ncu �
   waves 0.56、DRAM 34.2%/1.35%、warp-cyc 6.94/20.94 **逐项一致，无编造**。纯 kernel ~36.4us 属实。
 
 ### KernelWiki 引用核实
-- 真库在 `mlsys2026-flashinfer-contest/skills/KernelWiki/wiki`（memory 记的
+- 真库在 `skills/KernelWiki/wiki`（memory 记的
   `kernel-design-agents/.../KernelWiki` 是空目录，是废路径——不影响结论，仅记录）。
 - 所引 10 页（low-sm-utilization / pipeline-stalls / kernel-fusion / warp-specialization /
   pdl-gdc / persistent-kernels / sparse-mla / flashmla / nsa / tcgen05-mma）全部存在。

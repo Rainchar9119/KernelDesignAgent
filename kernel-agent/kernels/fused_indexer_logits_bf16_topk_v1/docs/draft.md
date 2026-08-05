@@ -108,8 +108,8 @@ python harness.py
 - 每个主要优化方向保留 NCU 剖析记录。
 - 积极评估并使用相关的 NVIDIA B200 / CUDA 13.2 特性：TMA, TMEM, tcgen05, warp specialization,
   persistent scheduling, PDL, 宽向量化访存。
-- 用 KernelWiki 做研究：`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki`
-- 用 ncu-report-skill 做 Nsight Compute 剖析与瓶颈分析：`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/ncu-report-skill`
+- 用 KernelWiki 做研究：`skills/KernelWiki`
+- 用 ncu-report-skill 做 Nsight Compute 剖析与瓶颈分析：`skills/ncu-report-skill`
 - **环境坑（见本目录 memory）**：只用 GPU 4/5/6/7（`export CUDA_VISIBLE_DEVICES=4`）；
   ncu 必须加 `--target-processes application-only`，否则挂死。
 

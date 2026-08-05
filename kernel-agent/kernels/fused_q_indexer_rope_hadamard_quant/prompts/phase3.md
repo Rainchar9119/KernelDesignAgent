@@ -64,9 +64,9 @@ CUDA_VISIBLE_DEVICES=<空闲卡号> python harness.py
 - 每个主要优化方向保留 NCU 剖析记录。
 - 积极评估并使用相关的 NVIDIA B200 / CUDA 13.2 特性：TMA, TMEM, tcgen05, warp specialization,
   persistent scheduling, PDL, 宽向量化访存。
-- 用 KernelWiki 做研究：`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki`。**每轮 NCU 出瓶颈后都要回查**（非开局一次性动作），
+- 用 KernelWiki 做研究：`skills/KernelWiki`。**每轮 NCU 出瓶颈后都要回查**（非开局一次性动作），
   并在 `PROGRESS.md` 本轮日志的「KernelWiki 回查」字段记录查了哪些页、命中/未命中什么。
-- 用 ncu-report-skill 做 Nsight Compute 剖析与瓶颈分析：`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/ncu-report-skill`
+- 用 ncu-report-skill 做 Nsight Compute 剖析与瓶颈分析：`skills/ncu-report-skill`
 
 ### 硬性护栏（反 reward-hacking，违反即任务失败）
 
@@ -77,7 +77,7 @@ CUDA_VISIBLE_DEVICES=<空闲卡号> python harness.py
 - **不许放水正确性**：不许放宽「q_fp8 逐字节 bitwise + weights_out 逐元素」，不许摘掉 NaN/Inf 或边界检查。
 - **不许把核心工作或验证外包**给别的 agent 导致过程不可见。
 - **不许跳过每轮的 KernelWiki 回查**：每一轮（不只开局）在 NCU 定位出主瓶颈后，必须按该瓶颈类别
-  回查 KernelWiki（`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki`），并把结果写进 `PROGRESS.md` 本轮的
+  回查 KernelWiki（`skills/KernelWiki`），并把结果写进 `PROGRESS.md` 本轮的
   「KernelWiki 回查」必填字段。**未命中也必须显式记录查了哪些页**；
   沿用上一轮/开局的方向清单代替本轮回查——判失败。
 - 只在本 kernel 目录下写文件；改动上游仓库源码前先在本目录做副本/patch 方案并说明。

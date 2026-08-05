@@ -86,7 +86,7 @@
 > 「KernelWiki 回查」写法：`本轮 NCU 的具体瓶颈（指标名+数值，不是宽类别）→ 查了哪些页（列路径）
 > → 每张读过的页一句话：它的手法 + 该手法的前提在本 kernel 成立/不成立 → 采纳还是拒绝、理由`。
 > 那句**前提成立性**是本字段的重点：写不出来就说明没真读页（reviewer 会打开页抽查核对）。
-> KernelWiki 路径：`/root/paddlejob/inference-public/yuanzihang/mlsys2026-flashinfer-contest/skills/KernelWiki/`。
+> KernelWiki 路径：`skills/KernelWiki/`。
 > **未命中也必须列出查过的页**，且需≥2 条检索路径（索引表 + `query.py`/`grep_wiki.py` 带本 kernel 具体术语）；
 > 只 grep `queries/by-problem.md` 那 7 个宽类别 ≠ 回查——深度在 48 张 wiki 页和 2179 张 PR 页里。
 > 写「同上轮」「已在 Phase 1 查过」= 未完成。
