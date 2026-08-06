@@ -457,8 +457,12 @@ void fused_indexer_kernel(Params p) {
   __syncthreads();
 #else
   // --- load q for this batch into SMEM (bf16 [HEADS, D]) --------------------
+  // MID reads Q straight from HBM into registers (see the bfrag preload below),
+  // so it skips this cooperative staging entirely.
   const __nv_bfloat16* qg = p.q + (int64_t)bx * p.q_stride_b;
-  for (uint32_t i = tx; i < HEADS * D; i += NTHREADS) q_smem[i] = qg[i];
+  if constexpr (!MID) {
+    for (uint32_t i = tx; i < HEADS * D; i += NTHREADS) q_smem[i] = qg[i];
+  }
   const float* wg = p.weight + (int64_t)bx * p.w_stride_b;
 
   // --- compute logits into SMEM via warp-level tensor-core GEMM ------------
@@ -488,6 +492,22 @@ void fused_indexer_kernel(Params p) {
   // spill to SMEM.
   const float w0 = wg[col0 + tig * 2];
   const float w1 = wg[col0 + tig * 2 + 1];
+  if constexpr (MID) {
+    // Skip the q_smem staging: bfrag is read once and then reused across every
+    // page-block, and each thread only touches 64B of Q, so stage it straight
+    // from HBM into registers. This drops the 512-thread cooperative q_smem
+    // store loop AND the __syncthreads that guarded it -- both part of the fixed
+    // per-CTA cost the linear fit put at ~15.6us (a third of the GEMM stage).
+    // q_smem[i] == qg[i], so the same (head,d) offset indexes global Q directly.
+#pragma unroll
+    for (int kt = 0; kt < 8; ++kt) {
+      const int kk = kt * 16;
+      bfrag[kt][0] = *reinterpret_cast<const uint32_t*>(
+          qg + (col0 + gid) * D + kk + tig * 2);
+      bfrag[kt][1] = *reinterpret_cast<const uint32_t*>(
+          qg + (col0 + gid) * D + kk + tig * 2 + 8);
+    }
+  } else {
   __syncthreads();  // q_smem fully populated before any warp reads its frag
 #pragma unroll
   for (int kt = 0; kt < 8; ++kt) {
@@ -496,6 +516,7 @@ void fused_indexer_kernel(Params p) {
         q_smem + (col0 + gid) * D + kk + tig * 2);
     bfrag[kt][1] = *reinterpret_cast<const uint32_t*>(
         q_smem + (col0 + gid) * D + kk + tig * 2 + 8);
+  }
   }
 
   // Multi-stage cp.async software pipeline for the per-page-block K load. Each
@@ -590,7 +611,17 @@ void fused_indexer_kernel(Params p) {
       for (int g = 0; g < HG; ++g) sum += s_part[tx][g];
       logits[i * PBLK + tx] = sum;
     }
-    __syncthreads();   // stage buffer free to be overwritten by a future load
+    if constexpr (!MID) {
+      __syncthreads();   // stage buffer free to be overwritten by a future load
+    } else {
+      // MID drops this barrier: with KSTAGES>=2 the stage buffer read this
+      // iteration is not overwritten until iteration i+KSTAGES (a different ring
+      // slot is loaded in between), and the next iteration's post-wait
+      // __syncthreads already forces every warp past both this block's K reads
+      // and its s_part reads before either buffer is rewritten. One fewer
+      // barrier per page-block -- the barrier stall was the post-R23 residual.
+      // Correctness verified by tie 8/8 (the split=2 case exercises this loop).
+    }
   }
 #endif  // FUSED_DIAG_SKIP_GEMM
 

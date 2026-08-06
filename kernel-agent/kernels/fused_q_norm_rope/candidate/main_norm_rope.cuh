@@ -147,7 +147,12 @@ Q_KERNEL void fused_q_norm_rope(const __grid_constant__ FusedQNormRopeParams par
   }
 
   // Stash the rope tail (last kRopeSize lanes' last tile) into shared memory;
-  // write nope tiles to gmem directly.
+  // write nope tiles to gmem directly. Nope tiles are written STREAMING
+  // (st.global.cs / __stcs): q_output is written exactly once and never read
+  // back within the kernel (L1 hit was only ~9% in NCU), so bypassing the L1
+  // write-allocate keeps the cache clean for the DRAM-bound load traffic. This
+  // is a pure cache-policy hint -- the stored bytes are identical, so bitwise
+  // parity is preserved and the RMSNorm fp32 accumulation is untouched.
   const bool is_rope_lane = lane_id >= kWarpThreads - kRopeSize;
 #pragma unroll
   for (int i = 0; i < kLocalSize; ++i) {
@@ -155,7 +160,10 @@ Q_KERNEL void fused_q_norm_rope(const __grid_constant__ FusedQNormRopeParams par
       const auto rope_id = lane_id - (kWarpThreads - kRopeSize);
       s_rope[warp_id][rope_id] = input_vec[i];
     } else {
-      gmem.store(output_ptr, input_vec[i], i);
+      // 128-bit streaming store of this nope tile (Storage is 16 bytes).
+      static_assert(sizeof(Storage) == 16, "expect 128-bit nope tile");
+      __stcs(reinterpret_cast<int4*>(output_ptr) + (lane_id + i * kWarpThreads),
+             *reinterpret_cast<const int4*>(&input_vec[i]));
     }
   }
   __syncwarp();

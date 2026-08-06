@@ -152,8 +152,17 @@ def _compile_cuh(cuh_path, torch_dtype, lineinfo, tag):
     wrapper = J._make_wrapper(
         ("forward", f"FusedQNormRopeKernel<{args}>::forward")
     )
-    cuda_sources = [f'#include "{cuh_path}"', wrapper]
-    src_hash = J._local_jit_source_hash([cuh_path])
+    # Local compile patch: this repo's sgl_kernel/type.cuh registers a
+    # dtype_trait for the SCALAR fp8_e4m3_t but not the PACKED fp8x2_e4m3_t, so
+    # the Q kernel's `cast<packed_t<DType>>(...)` rope store fails to instantiate
+    # for fp8 (the ORIGINAL baseline file has the same problem under this repo's
+    # headers -- it's an upstream gap, not our change). Prepend a header-only
+    # patch that adds the missing dtype_trait<fp8x2_e4m3_t>. Injected into BOTH
+    # baseline and candidate so fp8 stays a fair, bit-comparable head-to-head.
+    # It's a no-op for bf16. See fp8x2_patch.cuh for the rationale.
+    patch_hdr = os.path.join(HERE, "fp8x2_patch.cuh")
+    cuda_sources = [f'#include "{patch_hdr}"', f'#include "{cuh_path}"', wrapper]
+    src_hash = J._local_jit_source_hash([cuh_path, patch_hdr])
     safe_args = str(args).replace(", ", "_").replace(",", "_")
     module_name = f"sgl_kernel_jit_{tag}_qnormrope_{safe_args}_{src_hash}"
     extra_cuda = list(J._get_default_target_flags())
@@ -434,11 +443,12 @@ def main():
 
     if args.sweep:
         token_shapes = [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-        head_shapes = [16, 64]
+        head_shapes = [16, 17, 64]   # H=17 -> some total_works%4!=0 (tail warp)
     else:
-        # Include a total_works % 4 != 0 shape so the untouched pillar is real.
+        # H=17 with N=17 -> total_works=289 (%4=1): a block's tail warps hit the
+        # early-return path, so the untouched/guard pillar is actually exercised.
         token_shapes = [args.num_tokens] if args.num_tokens else [17, 256, 1024, 4096]
-        head_shapes = [args.num_q_heads] if args.num_q_heads else [64]
+        head_shapes = [args.num_q_heads] if args.num_q_heads else [17, 64]
 
     pos_dtypes = ({"int32": [torch.int32], "int64": [torch.int64],
                    "both": [torch.int32, torch.int64]}[args.pos_dtype])

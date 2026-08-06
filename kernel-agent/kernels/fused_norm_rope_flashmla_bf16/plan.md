@@ -142,7 +142,7 @@ ncu 瓶颈画像 + 第一版优化 plan；Phase 2 至少拿到一个正确且稳
 - `KernelDesignAgent/kernel-agent/kernels/fused_norm_rope_indexer_bf16/harness.py` — 姊妹 harness（candidate 加载 / L2 flush / 计时 / plan 字节布局）
 - `KernelDesignAgent/kernel-agent/kernels/fused_norm_rope_indexer_bf16/plan.md` — 姊妹 plan（AC-X 结构参考）
 - `KernelDesignAgent/reviewer/reviews/` — 同族审查历史
-- ncu-report-skill / KernelWiki（`mlsys2026-flashinfer-contest/skills/`）
+- ncu-report-skill / KernelWiki（`skills/`）
 
 ## Dependencies and Sequence
 

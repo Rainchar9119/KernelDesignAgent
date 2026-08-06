@@ -11,12 +11,13 @@
 - **每次动手前，先读 `plan.md` 和 `PROGRESS.md`**，确认当前 phase、上一轮做到哪、有无新 REVIEW 结论。
 - 不要依赖对话记忆；对话可能被压缩。状态一律以这两个文件为准。
 - 每轮结束必须更新 `PROGRESS.md`，**七个字段缺一不可**：当前 phase、本轮改动、
-  ncu 证据（本轮主瓶颈类别）、**KernelWiki 回查**、kernel/baseline 比值、正确性是否通过、下一步。
-  「KernelWiki 回查」= 每轮 NCU 出瓶颈后按该瓶颈类别回查 KernelWiki
-  （`skills/KernelWiki/`），
-  记录查了哪些页 / 每张读过的页一句「手法 + 其前提在本 kernel 成立/不成立」/ 采纳还是拒绝、理由。
-  未命中也要列页，且需≥2 条检索路径；只查 `queries/by-problem.md` 那几个宽类别不算回查。
-  **沿用开局静态方向清单 ≠ 回查**。
+  ncu 证据（本轮主瓶颈类别）、**本轮方向依据**、kernel/baseline 比值、正确性是否通过、下一步。
+  「本轮方向依据」= 每轮 NCU 出瓶颈后给出本轮方向的可审计依据，**二选一、地位对等**：
+  【KernelWiki 命中】（`skills/KernelWiki/` 是首选参考，非唯一来源）查了哪些页 / 每张页一句
+  「手法 + 其前提在本 kernel 成立/不成立」/ 采纳或拒绝理由；
+  **或【自研分析】**（KernelWiki 无迁移性好的方案时用，与命中对等）：一句「扫过哪页 / 为何不适用（前提 A vs
+  本 kernel B）」+ 从本轮 NCU 具体指标名+数值到瓶颈机制到所以改 X 的因果链 + 量化预测（下一轮回填实测）。
+  两条路都必须落到本轮具体瓶颈（指标名+数值）；**沿用开局静态方向清单 ≠ 依据**。
   字段为空或写「同上轮」= 本轮未完成，不得进 review。
 - 本文件只放**不可变的裁判与护栏**；具体做什么以 `plan.md` 为准。冲突时以护栏为上限、`plan.md` 为下限。
 
@@ -46,16 +47,15 @@
     只能打 `n/a (cand==base)`。
 
 ## 硬性护栏（违反即任务失败）
-- **不许跳过每轮的 KernelWiki 回查**：Phase 2/3 的**每一轮**（不只开局）在 NCU 定位出主瓶颈后，
-  必须按该瓶颈类别回查 KernelWiki
-  （`skills/KernelWiki/`，
-  用 `scripts/query.py` / `get_page.py` / `grep_wiki.py` 或 `queries/by-problem.md` 入口），
-  并把结果写进 `PROGRESS.md` 本轮的「KernelWiki 回查」必填字段。**未命中也必须显式列出查过的页**，
-  且需≥2 条检索路径；只 grep `queries/by-problem.md` 那 7 个宽类别不算回查（深度在 wiki 页与 PR 页里，
-  要用本 kernel 的具体术语走 `query.py` / `grep_wiki.py`）。检索命令报 `No module named yaml`
-  时换 `/usr/local/bin/python`，不得因命令报错就跳过。
-  沿用上一轮/开局的静态方向清单代替本轮回查——**判失败**。理由：优化每轮都在改变瓶颈画像
-  （occupancy → sync/发散 → launch/带宽），照旧清单执行等于跳过本步。
+- **不许跳过每轮的「本轮方向依据」**：Phase 2/3 的**每一轮**（不只开局）在 NCU 定位出主瓶颈后，
+  必须给出本轮方向的可审计依据，写进 `PROGRESS.md` 本轮该必填字段。依据**二选一、地位对等**：
+  (a) **KernelWiki 命中**（`skills/KernelWiki/` 是首选参考、非唯一来源；用 `scripts/query.py` /
+  `get_page.py` / `grep_wiki.py` 或 `queries/by-problem.md` 入口）——查了哪些页 / 每页手法及其前提是否成立 /
+  采纳或拒绝理由；(b) **自研分析**（KernelWiki 无迁移性好的方案时用，与命中对等，不是走捷径的借口）——
+  一句「扫过哪页 / 为何不适用（前提 A vs 本 kernel B）」+ 从本轮 NCU 具体指标名+数值到瓶颈机制到所以改 X
+  的因果链 + 量化预测（下一轮回填实测）。检索命令报 `No module named yaml` 时换 `/usr/local/bin/python`，
+  不得因命令报错就跳过。两条路都必须落到本轮具体瓶颈；沿用上一轮/开局的静态方向清单代替本轮依据——**判失败**。
+  理由：优化每轮都在改变瓶颈画像（occupancy → sync/发散 → launch/带宽），照旧清单执行等于跳过本步。
 - 不许改 golden 数学定义 / 放宽正确性口径 / 跳过 NaN/Inf 检查。
 - **NaN/Inf 检查的真实口径（勿再误述）**：harness 只查 logits **有效区（pos<seq_len[b]）**。
   排除 padding 的理由**不是**「那里是 -inf 哨兵」——tilelang 的 logits 由 `page_table.new_empty`
@@ -97,7 +97,9 @@
 - 审查由 `KernelDesignAgent/reviewer/` 下新开的**独立 Claude 审查者**做（隔离会话，自己复现数字、
   查 reward hacking）。审查者只把结论**追加**进本目录 `PROGRESS.md` 的 REVIEW 段；绝不改本目录其它文件。
 - 每轮动手前先读 `PROGRESS.md`，若有新 REVIEW 结论据此修改上一轮结果。
-- **审查者必查项**：本轮「KernelWiki 回查」字段是否真实——**随机取一张被引用的页打开，核对那句
-  「手法 + 前提成立性」与页面实际内容是否相符**（不符 = 伪造留证，比字段缺失更重）；页路径存在、
-  与本轮 ncu 瓶颈类别对得上、不是照抄上一轮或开局清单、检索≥2 条路径。
+- **审查者必查项**：本轮「本轮方向依据」字段是否合格。**KernelWiki 命中路径**——随机取一张被引用的页打开，
+  核对那句「手法 + 前提成立性」与页面实际内容是否相符（不符 = 伪造留证，比字段缺失更重）；页路径存在、
+  与本轮 ncu 瓶颈类别对得上、不是照抄上一轮或开局清单。**自研分析路径**——查因果链是否具体到本轮 NCU
+  指标名+数值且与复现的数字一致、「为何不适用」是否承重（前提 A vs B，不是套话）、量化预测下一轮是否回填
+  且历史预测没有连续对不上（空话/编造/预测对不上 = 判 ISSUE，归 reward hacking）。
   字段缺失或空转 → 直接判本轮未完成，不进入性能讨论。

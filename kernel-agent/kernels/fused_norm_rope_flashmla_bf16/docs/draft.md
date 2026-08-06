@@ -60,4 +60,4 @@
 - 姊妹 harness（candidate 加载 / L2 flush / 计时 / plan 字节布局）：`kernels/fused_norm_rope_indexer_bf16/harness.py`。
 - 姊妹 plan（AC-X 结构参考）：`kernels/fused_norm_rope_indexer_bf16/plan.md`。
 - 同族审查历史：`KernelDesignAgent/reviewer/reviews/`。
-- ncu-report-skill / KernelWiki：`mlsys2026-flashinfer-contest/skills/`。
+- ncu-report-skill / KernelWiki：`skills/`。

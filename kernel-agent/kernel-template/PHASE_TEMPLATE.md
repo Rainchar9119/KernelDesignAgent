@@ -95,9 +95,10 @@ NaN/Inf 检查**（NaN 比较恒为 false，必须单独查）。
 - 每个候选记进 `solutions.jsonl`，并维护候选间的 parent 链（DAG）。
 - 每个主要优化方向保留 NCU 剖析记录。
 - 积极评估并使用相关的 {{HARDWARE}} / CUDA {{CUDA_VERSION}} 特性：{{TARGET_FEATURES}}。
-- 用 KernelWiki 做研究：`{{KERNELWIKI_PATH}}`。**每轮 NCU 出瓶颈后都要回查**（非开局一次性动作），
-  并在 `PROGRESS.md` 本轮日志的「KernelWiki 回查」字段记录查了哪些页、每张页的手法及其前提在本
-  kernel 是否成立、采纳或拒绝的理由。
+- 用 KernelWiki 做研究：`{{KERNELWIKI_PATH}}`——它是**首选参考、不是唯一来源**。每轮 NCU 出瓶颈后
+  在 `PROGRESS.md` 本轮日志的「本轮方向依据」字段给出依据：**KernelWiki 命中**（查了哪些页、每页手法
+  及其前提是否成立、采纳/拒绝理由）**或 自研分析**（wiki 无迁移性好的方案时，说清为何不适用 +
+  基于本轮 NCU 证据的因果链 + 量化预测），两条路**地位对等**。
 - 用 ncu-report-skill 做 Nsight Compute 剖析与瓶颈分析：`{{NCU_SKILL_PATH}}`
 
 ### 硬性护栏（反 reward-hacking，违反即任务失败）
@@ -108,11 +109,14 @@ NaN/Inf 检查**（NaN 比较恒为 false，必须单独查）。
   证据说明为什么，而不是改目标。
 - **不许放水正确性**：不许放宽 {{TOLERANCE}}，不许摘掉 NaN/Inf 或边界检查。
 - **不许把核心工作或验证外包**给别的 agent 导致过程不可见。
-- **不许跳过每轮的 KernelWiki 回查**：每一轮（不只开局）在 NCU 定位出主瓶颈后，必须按该瓶颈类别
-  回查 KernelWiki（`{{KERNELWIKI_PATH}}`），并把结果写进 `PROGRESS.md` 本轮的
-  「KernelWiki 回查」必填字段。**未命中也必须显式记录查了哪些页**，且需≥2 条检索路径；
-  沿用上一轮/开局的方向清单代替本轮回查、或只 grep `queries/by-problem.md` 那几个宽类别——判失败。
-  检索命令报 `No module named yaml` 时换 `/usr/local/bin/python`，不得因命令报错就跳过回查。
+- **不许跳过每轮的「本轮方向依据」**：每一轮（不只开局）在 NCU 定位出主瓶颈后，必须给出本轮方向的
+  可审计依据，写进 `PROGRESS.md` 本轮的「本轮方向依据」必填字段。依据二选一、**地位对等**：
+  (a) **KernelWiki 命中**——查了哪些页、每页手法及其前提是否成立、采纳/拒绝理由；
+  (b) **自研分析**——KernelWiki 无迁移性好的方案时，一句说清扫过哪页/为何不适用（前提 A vs 本 kernel B），
+  再给「本轮 NCU 具体指标名+数值 → 瓶颈机制 → 所以改 X」的因果链 + 量化预测（下一轮回填实测）。
+  两条路都必须落到本轮具体瓶颈（指标名+数值）。字段为空、写「同上轮」、沿用开局静态方向清单代替本轮
+  依据、或只 grep `queries/by-problem.md` 那几个宽类别搪塞——判失败。
+  检索命令报 `No module named yaml` 时换 `/usr/local/bin/python`，不得因命令报错就跳过。
 - 只在本 kernel 目录下写文件；改动上游仓库源码前先在本目录做副本/patch 方案并说明。
 - 任何一步跑不通（环境/编译/ncu 权限），**停下报告错误原文**，不反复重试或绕过。
 
@@ -169,20 +173,26 @@ baseline 设计优先**。
 记录证据并转下一个方向。每个探索过的方向都要收集代表性 workload 上的 before/after benchmark
 和足够的 NCU 证据，据此判断 keep / revise / reject。
 
-**每轮迭代的固定循环**（KernelWiki 不是 Phase 1 的一次性动作）：
-`改 kernel → 验正确性 → 计时 → NCU 定位当前主瓶颈 → 针对该瓶颈类别回查 KernelWiki（`{{KERNELWIKI_PATH}}`）
-找已有优化 pattern → 应用 → 复测`。优化会不断改变瓶颈画像（tensor-core 利用率 / atomics 争用 /
-bank conflict / occupancy / 访存 等类别各不相同），Phase 1 剖出的瓶颈在迭代后会失效，故**每轮
-NCU 暴露的新瓶颈类别都必须重新查 KernelWiki**，而不是只在开局查一次。
+**每轮迭代的固定循环**（求依据不是 Phase 1 的一次性动作）：
+`改 kernel → 验正确性 → 计时 → NCU 定位当前主瓶颈 → 为本轮方向找依据 → 应用 → 复测`。
+「找依据」这一步：**优先参考 KernelWiki**（`{{KERNELWIKI_PATH}}`）——命中且前提在本 kernel 成立就采纳；
+若 KernelWiki 迁移性差 / 未命中，就**用你自己的经验直接分析 NCU 证据推导方向**（自研分析与命中地位对等，
+不是兜底）。优化会不断改变瓶颈画像（tensor-core 利用率 / atomics 争用 / bank conflict / occupancy /
+访存 等类别各不相同），Phase 1 剖出的瓶颈在迭代后会失效，故**每轮 NCU 暴露的新瓶颈类别都必须重新求依据**，
+而不是只在开局查一次、也不是每轮机械回查 wiki。
 
-> **落地机制（防漏查）**：这一步不靠记忆，靠 `PROGRESS.md` 每轮日志里的
-> **「KernelWiki 回查」必填字段**——记录「本轮 NCU 的具体瓶颈（指标+数值）→ 查了哪些页 →
-> 每张读过的页一句『手法 + 其前提在本 kernel 成立/不成立』→ 采纳还是拒绝、理由」。
-> 那句前提成立性是重点：写不出来就是没真读页。该字段为空或写「同上轮」= 本轮**未完成**，不得进入 review。
-> 典型失效模式（已发生过，务必避免）：Phase 1 查一次后产出一张静态方向清单，
-> 之后每轮只从清单取下一个方向执行，而瓶颈画像早已改变——这等于跳过了本步骤。
-> 另一种敷衍形态：只 grep `queries/by-problem.md`（仅 7 个宽类别），每轮映射到同样几个技术页——
-> 深度在 48 张 wiki 页和 2179 张 PR 页里，须用本 kernel 的具体术语走 `query.py` / `grep_wiki.py`。
+> **落地机制（防漏 + 防敷衍）**：这一步不靠记忆，靠 `PROGRESS.md` 每轮日志里的
+> **「本轮方向依据」必填字段**。两条对等路径：
+> - **KernelWiki 命中**：「本轮 NCU 具体瓶颈（指标+数值）→ 查了哪些页 → 每页『手法 + 其前提在本 kernel
+>   成立/不成立』→ 采纳/拒绝理由」。那句前提成立性是重点：写不出来就是没真读页。
+> - **自研分析**：「一句说清扫过哪页/为何不适用（前提 A vs 本 kernel B）→ 从本轮 NCU 具体指标名+数值到
+>   瓶颈机制到所以改 X 的因果链 → 量化预测」。下一轮日志**必须回填该预测实测对没对上**（可证伪，防编）。
+>
+> 该字段为空或写「同上轮」= 本轮**未完成**，不得进入 review。
+> 典型失效模式（已发生过，务必避免）：① Phase 1 查一次后产出一张静态方向清单，之后每轮只从清单取下一个
+> 方向执行，而瓶颈画像早已改变；② 每轮都写「wiki 没适用方案，我自己分析」来躲开翻 wiki，却给不出具体到
+> 本轮数字的因果链和可回填的预测——这跟写「同上轮」一样空，判未完成。反敷衍的牙齿是**依据必须落到本轮
+> 具体数字、且自研路径的预测下一轮要被复现验证**，不是「必须命中 wiki」。
 
 达标两层判据（前者不过不谈后者）：(a) 正确性通过 + 无 NaN/Inf；(b) 性能达到 {{TARGET_SPEEDUP}}。
 
@@ -197,5 +207,5 @@ NCU 暴露的新瓶颈类别都必须重新查 KernelWiki**，而不是只在开
 做开发，再用全量 {{WORKLOAD_COUNT}} 个 workload 做 promotion 决策。**必须对全部 workload
 保持正确性**。本轮 target speedup = **{{TARGET_SPEEDUP}}**（{{PERF_DIRECTION}}，相对 `{{BASELINE_NAME}}`）。
 
-Phase 2 的固定循环在本阶段同样生效：每轮 NCU 出瓶颈后回查 KernelWiki，并填 `PROGRESS.md`
-的「KernelWiki 回查」字段（shape 特化会改变瓶颈画像，各 shape 档位的瓶颈类别往往不同）。
+Phase 2 的固定循环在本阶段同样生效：每轮 NCU 出瓶颈后给出「本轮方向依据」（KernelWiki 命中或自研分析，
+地位对等），并填 `PROGRESS.md` 的该字段（shape 特化会改变瓶颈画像，各 shape 档位的瓶颈类别往往不同）。

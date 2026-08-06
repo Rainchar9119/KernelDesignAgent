@@ -3,7 +3,22 @@
 # PROGRESS: fused_indexer_logits_bf16_topk_v2（≤1K → 256K，streaming + split-KV）
 
 ## 当前状态
-- 当前 Phase: **Phase 2 —— Round 22（中档 q_smem padding QPAD 消 bank conflict 尝试，证伪回退，负结果）已完成，停下等 review**。
+- 当前 Phase: **Phase 2 —— Round 23（中档 GEMM 去 q_smem staging 省 per-CTA 固定开销，**首个正向结果**）已完成，停下等 review**。
+- **Round 23 结果（六轮负结果后首个正向）**：线性拟合定位到中档 GEMM-only 时间 ≈ **15.6us(固定) + 1.86us×page-block**
+  （256x576/9blk=32.4us、256x768/12blk=37.9us、256x1024/16blk=45.4us），固定开销占 GEMM ~1/3。吞吐全不饱和
+  （DRAM 22% / SM 43% / occupancy 41%）→ 纯 latency + per-CTA 固定开销主导，**非 occupancy 主导**（拆 split
+  提 occupancy 41%→63% 反使 GEMM 44.8→50.2us，证伪 occupancy 假设）。**改动（MID-only，`if constexpr(MID)`
+  隔离，fast-path 逐字节不变）**：去掉 MID 路径的 q_smem 协作 staging——bfrag 每线程只读自己 64B 的 Q 且
+  `q_smem[i]==qg[i]`，直接从 HBM 载入寄存器，省掉 512 线程 store 循环 + 一个 `__syncthreads`。
+  **纯 kernel 比值全档改善**：1x1024 **1.92→1.48**、8x1024 **1.94→1.37**、64x1024 **1.49→1.13**、
+  256x1024 **1.46→1.27**；GEMM-only 44.8→39.4us；long_scoreboard stall **3.81→1.17**、short_scoreboard
+  **3.88→1.52**（去掉 SMEM 中转链的直接体现）。正确性：短档 4/4 + **tie 8/8 PASS**（零容差；tie 的 split=2
+  档经 MID 路径，确认未破）。fast-path 守住：1x256K **0.246**。
+  **墙钟异常须如实记（待查）**：本轮墙钟测出融合**更慢**（COLD：1x1024 1.55/8x1024 1.56/64x1024 1.27/
+  256x1024 1.27），与 Round 20 记的 0.42~0.61（融合快）**矛盾**。大概率是环境变了（sglang 树扰动后 baseline
+  走 fallback 加载路径、host 开销画像不同于 R20 那次的 tilelang python wrapper），非本轮 kernel 改动所致
+  （本轮只动 GPU 侧 MID GEMM）。**护栏主指标仍以纯 kernel 为准**，墙钟矛盾留 reviewer 复核环境态；不拿墙钟
+  下结论。
 - **Round 22 结果**：中档诊断出 GEMM 侧 bfrag 预载有 954K SMEM load bank conflict（q_smem 裸 [HEADS,D] stride=D、
   8 个 gid 行撞同 bank——KPAD 当年只给 k_smem 补了 padding、漏了 q_smem）。给 MID 实例的 q_smem 加行 padding
   （QPAD=8，`QSTRIDE=D+QPAD`，MID-only）。**bank conflict 确实腰斩 954K→493K，但没转化成 GPU 时间**：
@@ -11,6 +26,9 @@
   1.46→1.42（~3%、噪声边缘）；64x1024 无变化。**判负结果、已回退**（换来的边际改善 < 布局复杂度代价）。
   信息价值：**bank conflict 不在关键路径上**——这从第三个角度（继 overlay 的 occupancy 容量、cluster 的
   co-residency）再次确认中档大 batch 瓶颈是 occupancy/latency 结构墙，非 SMEM 访问效率。
+  （**Round 23 更正**：R19-R22 反复判「occupancy 双锁是墙、非调参能破」，Round 23 用线性拟合证明真瓶颈其实是
+  **per-CTA 固定开销**，去掉 staging 即破，比值全档下降。R19「reg 55/thread、occupancy 双锁」的画像是 staging
+  在的旧态；去 staging 后 reg 降到 39，固定开销那一块被拆掉。之前「墙不可破」的结论**部分被本轮推翻**。）
 - **Round 21 结果**：按用户要求清理冗余代码（只删确认无用的、不碰逻辑）+ 精简冗长历史注释。删 2 处死代码
   （`HEADS_PER_G` 常量全文件零引用、`Params::part_cnt` 字段全库只赋 nullptr 无读取）；压 3 处过程记录注释
   （MID 模板说明 / overlay 实验历史 / mid 谓词段）。行数 1300→1285。**未碰任何逻辑**：短档 4/4 + tie 8/8 PASS。
@@ -32,9 +50,10 @@
     只更差（perseg=64 拉满 grid → 2.5×；强制 split=1 → 2.6×）。与 1x16K 同源，非调参能破。
   - **大 batch（256x1024 grid=256 填满 SM、64x1024 grid=128）= occupancy 双锁**：grid 够，但融合的单 CTA 把
     GEMM 的寄存器+SMEM 占满 → 占用锁 2 block/SM，而 baseline 两步各自满占用。SMEM overlay 这条 lever 已堵死。
-- **比值现状（默认构建，overlay 已回退，MID 仍是复制品未获加速）**：naive 0.40、1x256K 0.24、8x256K 0.58、
-  1x64K 0.68、1x16K 1.35、64x16K ~1.24（环境态，R11 的 1.19 是彼时）；**中档 MID 全档仍回退**：
-  1x1024 **1.92** / 8x1024 **1.94** / 64x1024 **1.49** / 256x1024 **1.46**。
+- **比值现状（默认构建，Round 23 后）**：naive 0.40、1x256K **0.246**、8x256K 0.58、
+  1x64K 0.68、1x16K 1.35、64x16K ~1.24；**中档 MID 全档 Round 23 改善**：
+  1x1024 **1.48**（was 1.92）/ 8x1024 **1.37**（was 1.94）/ 64x1024 **1.13**（was 1.49）/
+  256x1024 **1.27**（was 1.46）。仍 GPU >1，但差距大幅收窄，64x1024 逼近打平。
 - **下一步（用户拍板）**：本轮 A（overlay）回退后停下等 review；review 通过再试 **B = warp-specialization
   低把握路**（让 radix 阶段不占满 512 线程的 GEMM 资源）。诚实预期：大概率又是「正确但没赢」，与 §ROI 一致。
 - 三档编译期隔离骨架（Round 18）+ 放宽谓词（本轮）保留；MID 实例现为干净复制品，无未收益优化残留。
@@ -80,18 +99,20 @@
 ## 迭代日志
 
 > **每轮必填字段**（缺任一项 = 本轮未完成，不得进 review）：
-> Phase / 改了什么 / **ncu 关键证据（本轮主瓶颈类别）** / **KernelWiki 回查** /
+> Phase / 改了什么 / **ncu 关键证据（本轮主瓶颈类别）** / **本轮方向依据** /
 > kernel 与 baseline 时间及比值 / 正确性是否通过 / 下一步。
 >
-> 「KernelWiki 回查」写法：`本轮 NCU 的具体瓶颈（指标名+数值，不是宽类别）→ 查了哪些页（列路径）
-> → 每张读过的页一句话：它的手法 + 该手法的前提在本 kernel 成立/不成立 → 采纳还是拒绝、理由`。
-> 那句**前提成立性**是本字段的重点：写不出来就说明没真读页（reviewer 会打开页抽查核对）。
-> KernelWiki 路径：`skills/KernelWiki/`。
-> **未命中也必须列出查过的页**，且需≥2 条检索路径（索引表 + `query.py`/`grep_wiki.py` 带本 kernel 具体术语）；
-> 只 grep `queries/by-problem.md` 那 7 个宽类别 ≠ 回查——深度在 48 张 wiki 页和 2179 张 PR 页里。
-> 写「同上轮」「已在 Phase 1 查过」= 未完成。
-> 沿用开局那张静态方向清单执行**不算**回查——瓶颈画像每轮都在变。
-> 检索命令报 `No module named yaml` 时换 `/usr/local/bin/python`；不得因命令报错就跳过回查。
+> 「本轮方向依据」写法：先写 `本轮 NCU 的具体瓶颈（指标名+数值，不是宽类别）`，再从下面**两条对等路径二选一**：
+> - **【KernelWiki 命中】** 查了哪些页（列路径）→ 每张读过的页一句：它的手法 + 该手法的前提在本 kernel
+>   成立/不成立 → 采纳还是拒绝、理由（reviewer 会打开页抽查核对）。KernelWiki（`skills/KernelWiki/`）是
+>   首选参考、非唯一来源；深度在 48 张 wiki 页和 2179 张 PR 页里，用本 kernel 具体术语走 `query.py`/`grep_wiki.py`。
+> - **【自研分析】** 当 KernelWiki 无迁移性好的方案时用这条（与命中**地位对等**，不是兜底）：一句说清扫过哪页 /
+>   为何不适用（前提 A vs 本 kernel B）→ 从「本轮 NCU 具体指标名+数值」到「瓶颈机制」到「所以改 X」的**因果链**
+>   + **量化预测**，**下一轮日志必须回填实测对没对上**（可证伪，防编）。
+>
+> 两条路都必须落到**本轮**具体瓶颈；写「同上轮」「已在 Phase 1 查过」= 未完成。每轮瓶颈画像都会变
+> （占用抬上去后瓶颈就换了），沿用开局那张静态方向清单执行**不算**依据。
+> 检索命令报 `No module named yaml` 时换 `/usr/local/bin/python`；**不得因命令报错就跳过**。
 > （2026-07-27 补入，与模板同步。）
 
 ### Round 0 (Phase 0) —— 建目录 + 草拟 plan
@@ -1039,7 +1060,77 @@
   occupancy 结构墙）。中档已由 streaming/cluster/overlay/QPAD **四轮**不同角度尝试证伪同一堵墙；后续是否仍试
   B（warp-specialization）或按双列口径（Round 20：GPU 侧下限、端到端墙钟净赢）务实收口，待用户定。
 
+### Round 23 (Phase 2) —— 中档 GEMM 去 q_smem staging，省 per-CTA 固定开销（**六轮负结果后首个正向**）
+- **前情**：R15-R22 六轮（streaming/cluster/overlay/QPAD/pair-loop/split）均判「中档是 occupancy 结构墙、
+  非调参能破」。用户不甘心，要求发散找新方案。本轮先重做诊断，推翻了「occupancy 是瓶颈」这个前提。
+- **诊断（本轮关键，推翻旧结论）**：固定 batch=256、只变 seq_len 量 GEMM-only（`FUSED_DIAG_SKIP_RADIX=1`）：
+  256x576(9blk)=32.4us / 256x768(12blk)=37.9us / 256x1024(16blk)=45.4us → 线性拟合
+  **GEMM ≈ 15.6us(固定) + 1.86us×page-block**，固定开销占 ~1/3。吞吐全不饱和（DRAM 22% / SM 43% /
+  L1 49% / occupancy 41%）→ **纯 latency-bound + per-CTA 固定开销主导，非 occupancy 主导**。
+  反证：`FUSED_SPLIT_MIN_OVR=2` 把 occupancy 拉到 63%，GEMM 反而 44.8→50.2us（固定开销被复制到每个新 CTA）
+  → **证伪 R19-R22「提 occupancy 就能救」的假设**。
+- **改动（MID-only，`if constexpr(MID)` 编译期隔离，fast-path 逐字节不变）**：去掉 MID 路径的 q_smem 协作
+  staging。原来 512 线程协作把 16KB Q 搬进 q_smem SMEM + 一个 `__syncthreads` 守卫，再从 SMEM 读 bfrag。
+  但每线程的 bfrag 只用它自己 64B 的 Q，且 `q_smem[i]==qg[i]`，故**直接从 HBM 把 bfrag 载进寄存器**，省掉
+  整个协作 store 循环 + block 级 barrier（都在固定开销里）。fast-path（非 MID）保留原 staging，逐字不变。
+- **ncu 关键证据（本轮主瓶颈类别 = per-CTA 固定开销 / q staging + 其 barrier，非 occupancy）**：
+  改前 stall（256x1024）：long_scoreboard 3.81 / short_scoreboard 3.88 / barrier 2.48。
+  改后：long_scoreboard **1.17** / short_scoreboard **1.52** / barrier 2.70 / wait 2.64。
+  → 去掉 SMEM 中转链使两个 scoreboard stall 骤降（bfrag 不再依赖 SMEM store→load 往返），GEMM-only
+  44.8→39.4us，reg 40→39。新头号 stall 转为 barrier+wait（GEMM 每 page-block 3 个 `__syncthreads`），
+  是下一轮 lever。
+- **KernelWiki 回查**（本轮瓶颈：`GEMM per-CTA 固定开销 = 协作 q staging + 其 barrier；scoreboard stall 由
+  SMEM 中转链贡献`）：
+  - 路径 1（`queries/by-problem.md` 索引表 → low-sm-utilization / pipeline-stalls 行）：
+    `wiki/patterns/pipeline-stalls.md`、`wiki/patterns/low-sm-utilization.md`。
+  - 路径 2（`scripts/query.py` 本轮术语）：`"gemm loop latency bound achieved occupancy far below theoretical
+    warps stalled long scoreboard global load short scoreboard shared barrier per page block"` 命中
+    `pr-cutlass-2139`、`kernel-fused-moe`（warp-spec 方向，非对口）；
+    `"hide global memory load latency small tile mma few page blocks per cta increase ILP software pipeline
+    depth vs occupancy tradeoff"` 命中 `blog-jax-pallas-blackwell-matmul`、`hw-tcgen05-mma`。
+  - 逐页判断（手法 + 前提成立性 + 采纳/拒绝）：
+    - `patterns/pipeline-stalls.md`：手法=加 pipeline stages / warp-specialization / double-buffer 消除
+      TMA-MMA 角色切换 stall，前提「tensor core 吞吐/角色切换是瓶颈」。**前提不成立**——本 kernel SM 吞吐
+      才 43%、非 compute/tensor-core bound，且用的是 `mma.sync`（非 tcgen05 TMEM 流水）。**拒绝** warp-spec
+      /pipeline-stages 作本轮手法；但该页「profile first — pipeline is a waste on memory-bound kernels」的
+      Caveat 正面支持「先别上 pipeline、先砍固定开销」。
+    - `patterns/low-sm-utilization.md`：手法=grid>>SM / persistent。**前提不成立**——256x1024 grid 已 256、
+      occupancy 已 41% 有余量（理论 75%），瓶颈不是 grid 太小或占用不足，是固定开销 + latency。**拒绝**。
+    - `blog-jax-pallas-blackwell-matmul` / `hw-tcgen05-mma`：Blackwell 高性能 GEMM 靠 TMA+tcgen05+TMEM 流水，
+      前提是大 tile 长 K 维。**前提不成立**——本 GEMM K 维仅 128、每 page-block M/N 各 64，是极小 tile、
+      算得快，瓶颈在每 CTA 的 load 固定开销而非 MMA 流水。**拒绝 TMA/tcgen05 重构**（小 tile 不值当）。
+  - **诚实结论**：KernelWiki **无直接手法**支持本轮改动——「去掉多余的 SMEM 中转、直接从 HBM 载寄存器」是据
+    本 kernel 的数据流（bfrag 只读 64B/线程、q_smem==qg）+ 线性拟合自推，wiki 的 GEMM 优化页都面向大 tile
+    tensor-core 流水（前提不成立）。未命中即有效结论：本 kernel 的中档 GEMM 是「小 tile + 每 CTA 固定 load
+    开销」这个 wiki 未覆盖的形态。回查方向反而排除了 warp-spec（B 方向），因其前提（吞吐瓶颈）实测不成立。
+- **性能（ncu 纯 kernel 主指标，us/call；GPU3 空闲卡实测）**：
+  | shape | 改前(R22) | **改后(R23)** | |
+  |---|---|---|---|
+  | 1x1024 | 1.92 | **1.48** | 仍慢，大幅收窄 |
+  | 8x1024 | 1.94 | **1.37** | 同上 |
+  | 64x1024 | 1.49 | **1.13** | 逼近打平 |
+  | 256x1024 | 1.46 | **1.27** | |
+  | 1x256K（fast-path 守护）| 0.24 | **0.246** | 未连累 ✓ |
+  **墙钟（COLD，warmup25/iters100）本轮反常**：1x1024 1.55 / 8x1024 1.56 / 64x1024 1.27 / 256x1024 1.27，
+  **融合更慢**，与 Round 20 记的 0.42~0.61（融合快）矛盾。大概率环境态变化（sglang 树扰动后 baseline 走
+  fallback 加载、host 画像不同于 R20 的 tilelang python wrapper），非本轮 GPU 改动所致。**不拿墙钟下结论**，
+  矛盾留 reviewer 复核环境；主指标以纯 kernel 为准。
+- kernel 与 baseline 时间及比值：见上表（纯 kernel 主 + 墙钟旁证，墙钟异常已标注待查）。
+- 正确性是否通过：**是**——短档 4/4 PASS + **tie 8/8 PASS**（零容差；tie 的 split=2 档经 MID 路径，
+  确认去 staging 未破正确性）。
+- 下一步：**停下等 review**。请 reviewer：(1) 复现纯 kernel 比值全档改善（1.92→1.48 / 1.49→1.13 /
+  1.46→1.27）+ fast-path 0.246 守住 + 短 4/4 + tie 8/8；(2) 复核诊断（线性拟合固定开销 + occupancy 反证）
+  是否推翻 R19-R22「occupancy 墙」结论成立；(3) **复核墙钟反常**（本轮墙钟融合更慢 vs R20 融合更快，是否
+  环境态、是否影响任何结论）；(4) 定下一步——继续挖固定开销（K-load prologue / bfrag 的 global 读延迟隐藏 /
+  epilogue barrier，新头号 stall 是 barrier+wait），还是先收。
+
 ## 待办 / 阻塞
+- [ ] **停点：等 review 审 Round 23（中档去 q_smem staging，纯 kernel 全档改善，首个正向）**。见 Round 23
+      「下一步」四条：复现比值改善 + fast-path 守住 + 短 4/4 + tie 8/8；复核诊断推翻 occupancy 墙；复核墙钟反常；定下一步。
+- [ ] **下一步候选（Round 23 引出，review 通过后做）**：继续挖 per-CTA 固定开销——新头号 stall 是 barrier+wait
+      （GEMM 每 page-block 3 个 `__syncthreads`）。候选：K-load prologue 精简 / bfrag 的 global 读延迟隐藏
+      （cp.async 预取）/ epilogue s_part reduction 的 barrier 合并。每步 ncu + KernelWiki 回查。
+      **注：warp-spec（原 B 方向）已被 Round 23 回查排除**——其前提（tensor-core 吞吐瓶颈）实测不成立（SM 43%）。
 - [ ] **停点：等 review 审 Round 20（中档纯 kernel + 端到端墙钟双列口径）**。见 Round 20「下一步」。
 - [ ] **停点：等 review 审 Round 19（MID 谓词放宽 + SMEM overlay 证伪回退，负结果）**。见上「下一步」三条。
 - [ ] **下一步候选 B（用户拍板、review 通过后做）**：warp-specialization——radix 阶段释放/不占满 GEMM 的 512
