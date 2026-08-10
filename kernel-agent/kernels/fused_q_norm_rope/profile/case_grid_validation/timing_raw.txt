@@ -1,0 +1,104 @@
+===TIMING dt=fp8 H=8 (N sweep 17/256/1024/4096)===
+  [fp8 N=    17 H=  8 int32] works=136 (total_works%4=0)
+  [fp8 N=    17 H=  8 int32] direct HOT : baseline 7.232us  candidate 7.136us  ratio=0.9867
+  [fp8 N=    17 H=  8 int32] direct COLD: baseline 6.768us  candidate 7.616us  ratio=1.1253  (flush 50 MiB/iter)
+  [fp8 N=   256 H=  8 int32] works=2048 (total_works%4=0)
+  [fp8 N=   256 H=  8 int32] direct HOT : baseline 10.736us  candidate 10.800us  ratio=1.0060
+  [fp8 N=   256 H=  8 int32] direct COLD: baseline 6.944us  candidate 8.640us  ratio=1.2442  (flush 50 MiB/iter)
+  [fp8 N=  1024 H=  8 int32] works=8192 (total_works%4=0)
+  [fp8 N=  1024 H=  8 int32] direct HOT : baseline 10.448us  candidate 10.496us  ratio=1.0046
+  [fp8 N=  1024 H=  8 int32] direct COLD: baseline 8.672us  candidate 8.928us  ratio=1.0295  (flush 50 MiB/iter)
+  [fp8 N=  4096 H=  8 int32] works=32768 (total_works%4=0)
+  [fp8 N=  4096 H=  8 int32] direct HOT : baseline 17.024us  candidate 16.288us  ratio=0.9568
+  [fp8 N=  4096 H=  8 int32] direct COLD: baseline 16.800us  candidate 14.912us  ratio=0.8876  (flush 50 MiB/iter)
+===TIMING dt=fp8 H=16 (N sweep 17/256/1024/4096)===
+  [fp8 N=    17 H= 16 int32] works=272 (total_works%4=0)
+  [fp8 N=    17 H= 16 int32] direct HOT : baseline 11.920us  candidate 11.696us  ratio=0.9812
+  [fp8 N=    17 H= 16 int32] direct COLD: baseline 8.688us  candidate 8.544us  ratio=0.9834  (flush 50 MiB/iter)
+  [fp8 N=   256 H= 16 int32] works=4096 (total_works%4=0)
+  [fp8 N=   256 H= 16 int32] direct HOT : baseline 11.472us  candidate 11.808us  ratio=1.0293
+  [fp8 N=   256 H= 16 int32] direct COLD: baseline 7.952us  candidate 8.576us  ratio=1.0785  (flush 50 MiB/iter)
+  [fp8 N=  1024 H= 16 int32] works=16384 (total_works%4=0)
+  [fp8 N=  1024 H= 16 int32] direct HOT : baseline 12.368us  candidate 11.616us  ratio=0.9392
+  [fp8 N=  1024 H= 16 int32] direct COLD: baseline 12.640us  candidate 11.616us  ratio=0.9190  (flush 50 MiB/iter)
+  [fp8 N=  4096 H= 16 int32] works=65536 (total_works%4=0)
+  [fp8 N=  4096 H= 16 int32] direct HOT : baseline 25.760us  candidate 22.992us  ratio=0.8925
+  [fp8 N=  4096 H= 16 int32] direct COLD: baseline 27.008us  candidate 22.912us  ratio=0.8483  (flush 50 MiB/iter)
+===TIMING dt=fp8 H=32 (N sweep 17/256/1024/4096)===
+  [fp8 N=    17 H= 32 int32] works=544 (total_works%4=0)
+  [fp8 N=    17 H= 32 int32] direct HOT : baseline 10.992us  candidate 10.928us  ratio=0.9942
+  [fp8 N=    17 H= 32 int32] direct COLD: baseline 6.752us  candidate 7.584us  ratio=1.1232  (flush 50 MiB/iter)
+  [fp8 N=   256 H= 32 int32] works=8192 (total_works%4=0)
+  [fp8 N=   256 H= 32 int32] direct HOT : baseline 11.056us  candidate 11.072us  ratio=1.0014
+  [fp8 N=   256 H= 32 int32] direct COLD: baseline 8.608us  candidate 10.592us  ratio=1.2305  (flush 50 MiB/iter)
+  [fp8 N=  1024 H= 32 int32] works=32768 (total_works%4=0)
+  [fp8 N=  1024 H= 32 int32] direct HOT : baseline 16.784us  candidate 16.944us  ratio=1.0095
+  [fp8 N=  1024 H= 32 int32] direct COLD: baseline 17.088us  candidate 15.056us  ratio=0.8811  (flush 50 MiB/iter)
+  [fp8 N=  4096 H= 32 int32] works=131072 (total_works%4=0)
+  [fp8 N=  4096 H= 32 int32] direct HOT : baseline 46.368us  candidate 38.208us  ratio=0.8240
+  [fp8 N=  4096 H= 32 int32] direct COLD: baseline 45.440us  candidate 37.248us  ratio=0.8197  (flush 50 MiB/iter)
+===TIMING dt=fp8 H=64 (N sweep 17/256/1024/4096)===
+  [fp8 N=    17 H= 64 int32] works=1088 (total_works%4=0)
+  [fp8 N=    17 H= 64 int32] direct HOT : baseline 11.328us  candidate 11.024us  ratio=0.9732
+  [fp8 N=    17 H= 64 int32] direct COLD: baseline 6.784us  candidate 8.608us  ratio=1.2689  (flush 50 MiB/iter)
+  [fp8 N=   256 H= 64 int32] works=16384 (total_works%4=0)
+  [fp8 N=   256 H= 64 int32] direct HOT : baseline 13.072us  candidate 12.032us  ratio=0.9204
+  [fp8 N=   256 H= 64 int32] direct COLD: baseline 12.672us  candidate 11.008us  ratio=0.8687  (flush 50 MiB/iter)
+  [fp8 N=  1024 H= 64 int32] works=65536 (total_works%4=0)
+  [fp8 N=  1024 H= 64 int32] direct HOT : baseline 26.544us  candidate 23.376us  ratio=0.8807
+  [fp8 N=  1024 H= 64 int32] direct COLD: baseline 27.040us  candidate 22.944us  ratio=0.8485  (flush 50 MiB/iter)
+  [fp8 N=  4096 H= 64 int32] works=262144 (total_works%4=0)
+  [fp8 N=  4096 H= 64 int32] direct HOT : baseline 83.456us  candidate 65.392us  ratio=0.7836
+  [fp8 N=  4096 H= 64 int32] direct COLD: baseline 82.336us  candidate 64.192us  ratio=0.7796  (flush 50 MiB/iter)
+===TIMING dt=bf16 H=8 (N sweep 17/256/1024/4096)===
+  [bf16 N=    17 H=  8 int32] works=136 (total_works%4=0)
+  [bf16 N=    17 H=  8 int32] direct HOT : baseline 11.120us  candidate 11.072us  ratio=0.9957
+  [bf16 N=    17 H=  8 int32] direct COLD: baseline 6.784us  candidate 6.608us  ratio=0.9741  (flush 50 MiB/iter)
+  [bf16 N=   256 H=  8 int32] works=2048 (total_works%4=0)
+  [bf16 N=   256 H=  8 int32] direct HOT : baseline 10.592us  candidate 10.592us  ratio=1.0000
+  [bf16 N=   256 H=  8 int32] direct COLD: baseline 8.576us  candidate 8.576us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=  1024 H=  8 int32] works=8192 (total_works%4=0)
+  [bf16 N=  1024 H=  8 int32] direct HOT : baseline 10.256us  candidate 10.080us  ratio=0.9828
+  [bf16 N=  1024 H=  8 int32] direct COLD: baseline 10.624us  candidate 10.624us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=  4096 H=  8 int32] works=32768 (total_works%4=0)
+  [bf16 N=  4096 H=  8 int32] direct HOT : baseline 16.624us  candidate 16.288us  ratio=0.9798
+  [bf16 N=  4096 H=  8 int32] direct COLD: baseline 16.960us  candidate 17.792us  ratio=1.0491  (flush 50 MiB/iter)
+===TIMING dt=bf16 H=16 (N sweep 17/256/1024/4096)===
+  [bf16 N=    17 H= 16 int32] works=272 (total_works%4=0)
+  [bf16 N=    17 H= 16 int32] direct HOT : baseline 11.088us  candidate 10.688us  ratio=0.9639
+  [bf16 N=    17 H= 16 int32] direct COLD: baseline 7.536us  candidate 6.560us  ratio=0.8705  (flush 50 MiB/iter)
+  [bf16 N=   256 H= 16 int32] works=4096 (total_works%4=0)
+  [bf16 N=   256 H= 16 int32] direct HOT : baseline 10.528us  candidate 10.240us  ratio=0.9726
+  [bf16 N=   256 H= 16 int32] direct COLD: baseline 8.576us  candidate 8.576us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=  1024 H= 16 int32] works=16384 (total_works%4=0)
+  [bf16 N=  1024 H= 16 int32] direct HOT : baseline 12.448us  candidate 12.304us  ratio=0.9884
+  [bf16 N=  1024 H= 16 int32] direct COLD: baseline 12.608us  candidate 12.640us  ratio=1.0025  (flush 50 MiB/iter)
+  [bf16 N=  4096 H= 16 int32] works=65536 (total_works%4=0)
+  [bf16 N=  4096 H= 16 int32] direct HOT : baseline 26.736us  candidate 26.992us  ratio=1.0096
+  [bf16 N=  4096 H= 16 int32] direct COLD: baseline 27.152us  candidate 28.000us  ratio=1.0312  (flush 50 MiB/iter)
+===TIMING dt=bf16 H=32 (N sweep 17/256/1024/4096)===
+  [bf16 N=    17 H= 32 int32] works=544 (total_works%4=0)
+  [bf16 N=    17 H= 32 int32] direct HOT : baseline 12.256us  candidate 11.936us  ratio=0.9739
+  [bf16 N=    17 H= 32 int32] direct COLD: baseline 7.520us  candidate 7.520us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=   256 H= 32 int32] works=8192 (total_works%4=0)
+  [bf16 N=   256 H= 32 int32] direct HOT : baseline 12.000us  candidate 11.568us  ratio=0.9640
+  [bf16 N=   256 H= 32 int32] direct COLD: baseline 10.528us  candidate 10.560us  ratio=1.0030  (flush 50 MiB/iter)
+  [bf16 N=  1024 H= 32 int32] works=32768 (total_works%4=0)
+  [bf16 N=  1024 H= 32 int32] direct HOT : baseline 17.984us  candidate 17.840us  ratio=0.9920
+  [bf16 N=  1024 H= 32 int32] direct COLD: baseline 18.048us  candidate 18.032us  ratio=0.9991  (flush 50 MiB/iter)
+  [bf16 N=  4096 H= 32 int32] works=131072 (total_works%4=0)
+  [bf16 N=  4096 H= 32 int32] direct HOT : baseline 48.336us  candidate 48.496us  ratio=1.0033
+  [bf16 N=  4096 H= 32 int32] direct COLD: baseline 46.432us  candidate 47.440us  ratio=1.0217  (flush 50 MiB/iter)
+===TIMING dt=bf16 H=64 (N sweep 17/256/1024/4096)===
+  [bf16 N=    17 H= 64 int32] works=1088 (total_works%4=0)
+  [bf16 N=    17 H= 64 int32] direct HOT : baseline 11.904us  candidate 11.344us  ratio=0.9530
+  [bf16 N=    17 H= 64 int32] direct COLD: baseline 6.848us  candidate 6.720us  ratio=0.9813  (flush 50 MiB/iter)
+  [bf16 N=   256 H= 64 int32] works=16384 (total_works%4=0)
+  [bf16 N=   256 H= 64 int32] direct HOT : baseline 12.896us  candidate 12.896us  ratio=1.0000
+  [bf16 N=   256 H= 64 int32] direct COLD: baseline 12.672us  candidate 12.672us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=  1024 H= 64 int32] works=65536 (total_works%4=0)
+  [bf16 N=  1024 H= 64 int32] direct HOT : baseline 28.160us  candidate 27.552us  ratio=0.9784
+  [bf16 N=  1024 H= 64 int32] direct COLD: baseline 27.040us  candidate 27.040us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=  4096 H= 64 int32] works=262144 (total_works%4=0)
+  [bf16 N=  4096 H= 64 int32] direct HOT : baseline 84.384us  candidate 84.688us  ratio=1.0036
+  [bf16 N=  4096 H= 64 int32] direct COLD: baseline 83.328us  candidate 84.384us  ratio=1.0127  (flush 50 MiB/iter)

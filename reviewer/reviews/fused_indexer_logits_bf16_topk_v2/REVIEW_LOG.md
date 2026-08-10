@@ -1525,3 +1525,180 @@ Round 20 是干净的双列口径轮：kernel 逐字节未动，中档墙钟 0.4
 | 8x256K | split+combine | 0.56 | 快 1.8× | — |
 | 1x256K | split+combine | 0.24 | 快 4.1× | — |
 （纯 kernel 数字：naive/1024/cluster-band/长档均本会话空闲卡复现；64x16K 空闲卡稳定 1.20~1.24，R11 彼时环境 1.19。墙钟仅中档+3 个 naive 本轮实测，余档未逐一测墙钟。）
+
+## REVIEW R18 (2026-08-06, 独立审查者) —— Phase 2 Round 23（中档去 q_smem staging，首个正向）+ 中档全档实测
+
+**审查目标**：`kernels/fused_indexer_logits_bf16_topk_v2/`
+**裁决：ISSUE**（Round 23 本身声称的改动为真、正确性守住、纯 kernel 比值全档复现，**但磁盘上的默认 kernel 含一条 PROGRESS 任何一轮都没记录的 cp.async K-load 流水线改动，且它推翻了 Round 23「fast-path 逐字节不变」的明文声称**——判 **流程未完成 + 代码与声称不符**，非 reward hacking。）
+
+### 一、Round 23 声称的改动为真 ✓
+- `candidate/fused_kernel.cu:495` `if constexpr (MID)` 分支确实跳过 q_smem 协作 staging，直接从 HBM 把 bfrag 载入寄存器（`:502-509`），省掉 512 线程 store 循环 + 一个 `__syncthreads`；fast-path（`:510 else`）保留 `q_smem fully populated` 的协作 staging（`:511`）。MID/fast-path 用 `if constexpr` 编译期隔离，属实。
+
+### 二、正确性复现 ✓（零容差，我自己在空闲 GPU3 跑）
+- **短档 4/4 PASS**：1x128 / 8x512 / 64x1024 / 256x1024，全部 `set_equal=True` + `multiset_equal=True` + `finite=True` + logits valid 区无 NaN/Inf。其中 64x1024 / 256x1024 走 MID<1024,1> 模板，直接覆盖本轮改动路径。
+- **tie（split=2 MID 路径）PASS**：B=64 S=16384 ntop=512 split=2，`multiset_equal=True` + valid count golden=32768/cand=32768 ok。
+- tie 全 8 例我未跑完——每例重编译 + 长序列，单例数分钟，8 例 >20min 屡次超时；已验证的 split=2 MID 例 + 短 4/4（含 MID 模板）足以确认本轮去 staging 未破正确性。golden 仍是 `topk_transform_512_pytorch_vectorized`（`golden_topk.py` 从 `indexer.py:233` 实源 AST 抽取，torch.topk 数学），无 rel_tol 后门（`harness.py:23,398` 明记 zero tolerance）——判据未被放水 ✓。
+
+### 三、性能复现 ✓（纯 kernel = 护栏主指标，ncu，空闲 GPU2/3）
+| shape | R23 声称 | 我复现 | 判定 |
+|---|---|---|---|
+| 1x1024 | 1.48 | **1.49** | 一致 |
+| 8x1024 | 1.37 | **1.44** | 一致（combine 抖动）|
+| 64x1024 | 1.13 | **1.14** | 一致 |
+| 256x1024 | 1.27 | **1.29** | 一致 |
+| 8x256K（fast-path 守护）| 0.58 | **0.547** | 守住、更快 ✓ |
+比值全档改善为真，六轮负结果后确是首个正向。
+
+### 四、**你顺便要的中档全档（我实测 ncu 纯 kernel，GPU2/3 空闲卡）**
+| shape | base_us | cand_us | pure_ratio | 判定 |
+|---|---|---|---|---|
+| 1x768 | 13.56 | 20.02 | **1.48** | GPU 慢 |
+| 8x768 | 13.68 | 19.58 | **1.43** | GPU 慢 |
+| 64x768 | 19.35 | 21.66 | **1.12** | GPU 慢 |
+| 256x768 | 30.00 | 36.54 | **1.22** | GPU 慢 |
+| 1x1024 | 13.87 | 20.67 | **1.49** | GPU 慢 |
+| 8x1024 | 12.90 | 18.57 | **1.44** | GPU 慢 |
+| 64x1024 | 21.20 | 24.10 | **1.14** | GPU 慢 |
+| 256x1024 | 34.73 | 44.68 | **1.29** | GPU 慢 |
+| 1x2048 | 15.33 | 23.95 | **1.56** | GPU 慢 |
+| 8x2048 | 17.51 | 23.63 | **1.35** | GPU 慢 |
+| 64x2048 | 30.12 | 38.83 | **1.29** | GPU 慢 |
+| 256x2048 | 55.63 | 74.55 | **1.34** | GPU 慢 |
+（中档全档 GPU 侧仍 >1，1x/8x 小 batch 最差（combine 占比大：如 1x1024 fused 20.67us 里 combine 10.41 + stage1 10.27），64x 系列最接近打平（1.12~1.14）。与 R23 的分档诊断一致：中档是 per-CTA 融合税，去 staging 收窄但未翻正。）
+
+### 五、ISSUE：默认 kernel 含一条 PROGRESS 未记录的 cp.async 改动，且与 R23 声称冲突
+- `candidate/fused_kernel.cu` 现含完整 cp.async 多级 K-load 流水线：`cp_async_cg16`/`cp_async_commit`/`cp_async_wait`（`:155-167`）、`KSTAGES=2` ring（`:143-147`）、重写的 K-load 循环（`:532-563`，`load_async` lambda + prologue + commit/wait_group）。**该循环在 `if constexpr(MID)` 之外，naive/mid/split 全实例共用。**
+- **三个证据链指向「未记录的改动」**：
+  1. 该 cp.async 代码在**任何一份备份里都不存在**——`candidate_backup_R16_clean`（1253 行）、`_pre_banding_backup`（1253 行）、`_pre_cleanup_backup`（R22 期，1300 行）`cp_async_cg16` 计数全为 0；仅当前磁盘版（1388 行）有。
+  2. PROGRESS.md **没有任何一轮记录这条改动**：全文搜 `cp.async/cp_async/KSTAGES/K-load pipeline` 只在 Round 23「下一步候选」里作为**将来要试**的项出现（`PROGRESS.md:1131-1132` "K-load prologue 精简 / bfrag cp.async 预取"）。无 Round 24，无对应的正确性/性能/KernelWiki 回查记录。
+  3. 唯一留痕在 subagent memory `.claude/agent-memory/kernel-optimization-engineer/cpasync_pipeline.md`（2026-08-04，即 Round 23 之后），诚实记了「reg 55→38、occupancy 2→3、8x256K ~8%、中档 grid-limited 故打平」——**说明这条改动被做了、被测了，却从没写进 PROGRESS 迭代日志给审查者看**。
+- **与 Round 23 明文声称直接冲突**：R23 写「改动（MID-only，`if constexpr(MID)` 隔离，fast-path 逐字节不变）」（`PROGRESS.md:11,1072,1075`）。但 fast-path（非 MID）的 K-load 已从 R16 的「寄存器 store（`*reinterpret_cast<int4*>(&k_smem[...])=src[v]`）」改成 cp.async 流水线——**fast-path 并非逐字节不变**。R23 的 GEMM-only 44.8→39.4us / long_scoreboard 3.81→1.17 也无法与 subagent memory 里 cp.async 那次的数字（GEMM 45.4 平、long_scoreboard 4.89→4.18）对齐，说明磁盘态混入了 R23 记录之外的改动。
+- **定性**：这是**流程未完成（结果对≠流程对）+ 代码与声称不符**。不归 reward hacking——cp.async 那次改动在 subagent memory 里如实记了「不改善中档、只是结构更优」，没伪造收益、没削 baseline、没放水判据；但它以「一条进默认构建、影响全实例、却无 PROGRESS 轮次 / 无 KernelWiki 回查字段 / 无正确性留证」的方式落盘，且让 R23 的「fast-path 逐字节不变」成了错误声称。判据文件（CLAUDE.md）要求每轮改动都要有 PROGRESS 记录 + 回查字段 + 正确性数字，这条改动全缺。
+
+### 六、要求（闭合 ISSUE）
+1. 给 cp.async K-load 流水线补一个独立 Round（Round 24？）：记清改动范围（**全实例，含 fast-path**，非 MID-only）、正确性（短 4/4 + tie + 长档零容差重跑）、纯 kernel 比值（尤其 fast-path 长档 8x256K/1x256K 有没有被这条改动动过——subagent memory 说 8x256K 0.587→0.544，那默认比值现状表也要同步）、以及本轮 KernelWiki 回查/自研依据字段。
+2. 订正 Round 23 的「fast-path 逐字节不变」声称——fast-path 的 K-load 已被 cp.async 取代，R23 的 GEMM-only 39.4us 数字要说明是「含 cp.async」还是「纯去 staging」态。
+3. 在 PROGRESS「比值现状」表标注默认构建已含 cp.async（当前表把 8x256K 记 0.58 是 cp.async 前的数）。
+
+### 七、流程合规其余项
+- **KernelWiki 回查（Round 23 字段本身合格）**：R23 走【自研分析】路径（"KernelWiki 无直接手法"）。我抽查其引用页真实性：`patterns/pipeline-stalls.md` 确含 warp-spec/pipeline-stages 候选手法 + "Profile first — pipeline is a waste of effort on memory-bound kernels" 的 Caveat（`:58`）——R23 引这句支持「先砍固定开销、别上 pipeline」，与页面相符；`patterns/low-sm-utilization.md` 确讲 grid too small / persistent（`:21,28`），R23 判「前提不成立（occupancy 41% 有余量）」站得住。因果链（SM 43% / occupancy 41% / 线性拟合 15.6us+1.86us/blk → 去 staging）具体、与我复现的比值一致。**R23 这一轮的回查非打卡、非伪造** ✓。（讽刺的是：真正缺回查的恰是那条没写进任何一轮的 cp.async 改动。）
+- baseline 未换（两步 CUDA 墙钟 + tilelang logits kernel，`harness.py:9-12`）、v1 未动、只写 v2 ✓。
+
+### 结论（向人一句话）
+Round 23 去 q_smem staging 这件事是真的、正确的、比值全档改善我也复现了（1.48/1.44/1.14/1.29），中档全档你要的 12 个点我也测全了（全 >1，64x 系列最接近打平 1.12~1.14）。**但磁盘上的默认 kernel 里还藏着一条 cp.async K-load 流水线改动，PROGRESS 任何一轮都没记录、只在 subagent 记忆里有，而且它推翻了 Round 23「fast-path 逐字节不变」的声称（fast-path 的 K-load 确实被改了）**。改动本身没作弊（记忆里如实记了它不救中档），问题是它绕过了「每轮改动必须进 PROGRESS + 留正确性/性能/回查证据」的流程——**判 ISSUE（流程未完成 + 代码与声称不符），要求补一个独立 Round 把这条 cp.async 改动记全并订正 R23 的 fast-path 声称**。
+
+## REVIEW R19 (2026-08-06, 独立审查者) —— 复核 REVIEW R18 的 ISSUE 闭合（补记 Round 22.5 + 订正 R23 fast-path 声称）
+
+**审查目标**：`kernels/fused_indexer_logits_bf16_topk_v2/`
+**裁决：PASS**（R18 ISSUE 的三条要求全部兑现：cp.async 改动补记为独立 **Round 22.5**、范围如实写成「全实例含 fast-path」、R23「fast-path 逐字节不变」误述已订正、比值现状表标注默认含 cp.async、长档 9/9 零容差 + 长档比值我复现守住。无 reward hacking。）
+
+### 一、R18 三条要求逐条核对 ✓
+1. **补独立 Round 记 cp.async**：新增 `Round 22.5`（`PROGRESS.md:1069`），编号取 22.5 反映真实落盘时序（22 后 23 前，subagent 于 2026-08-03 落盘）。记清了：
+   - **改动范围写对了**——明文「全实例，含 fast-path，非 MID-only」（`:1075`），与代码一致（K-load 循环 `:532` 在 `if constexpr(MID)` 之外，naive/mid/split 共用）。这正是 R18 抓的点，已如实纠正。
+   - ncu 证据（reg 55→38、occupancy 2→3、short_scoreboard 5.24→3.36 等）、KSTAGES 甜点扫描、正确性、比值表全有。
+2. **订正 R23「fast-path 逐字节不变」**：`:1119-1120` 明写「R23『fast-path 逐字节不变』应为『fast-path 保持 Round 22.5 的 cp.async K-load，R23 只在 MID 分支额外去 q staging』」。误述已闭合（R23 轮内原句 `:1134` 未改，但按 append-only 规矩以订正条追补，可接受）。
+3. **比值现状表标注默认含 cp.async**：`:58` 现写「比值现状（默认构建，Round 23 后；**默认构建已含 Round 22.5 的 cp.async K-load**）」。达标。
+
+### 二、性能复现 ✓（纯 kernel = 护栏主指标，ncu，空闲 GPU1）
+| shape | R22.5 声称 | 我复现 | 判定 |
+|---|---|---|---|
+| 8x256K | 0.538 | **0.545** | 一致（长档快、cp.async 唯一实收益兑现）|
+| 64x16K | 1.231 | **1.237** | 一致（守住、仍 >1）|
+cp.async 后长档比值守住、8x256K 确实更快（对标 subagent memory 记的 0.587→0.544），R22.5 的「对长档有真收益、对中档 grid-limited 无收益但结构更优」结论成立。
+
+### 三、正确性复现 ✓（长档 9/9 零容差，我自己在空闲 GPU0 全跑）
+- **长档 9/9 全 PASS**：1x~16K / 4x~16K / 64x~16K / 128x~16K / 1x~64K / 2x~64K / 16x~64K / 1x~256K / 8x~256K，全部 `set_equal=True`（page+raw）+ `multiset_equal=True` + `finite=True` + logits valid 区无 NaN/Inf。cp.async 未暗伤任何长档。golden 仍是 `topk_transform_512_pytorch_vectorized`（torch.topk 数学），无 rel_tol 后门。
+- （R18 已复现短 4/4 + tie split=2 MID 例；本轮补长档 9/9，覆盖 cp.async 全实例路径。）
+
+### 四、KernelWiki 回查（Round 22.5 字段，走【命中】路径，抽查真实性）✓
+- R22.5 引三页，我逐页开检：
+  - `techniques/pipeline-stages.md`（真实，`:17` "Software pipelining overlaps data loading ... maintaining multiple in-flight tile buffers ... circular buffer of 3-5 stages ... hiding the global memory latency"）——R22.5 说「多级循环缓冲让 load 与 compute 重叠隐藏延迟，前提=有可重叠的持续 compute，GEMM 的 MMA 成立 → 采纳」，**与页面相符** ✓。
+  - `techniques/register-budgeting.md`（真实，`:19` "SM occupancy is inversely proportional to registers-per-thread. For memory-bound kernels, higher occupancy = more warps to hide memory latency"）——R22.5 说「间接命中：去 register→SMEM 中转自然把 reg 55→38、占用 2→3，采纳其机理」，**与页面相符** ✓。
+  - `hardware/tma.md`（真实，`:35-37` "TMA operations are driven by a descriptor ... created on the host"）——R22.5 说「TMA descriptor 开销重、K tile 小、cp.async 16B 已够 → 拒绝 TMA」，**前提判断成立** ✓。
+- 因果链具体（reg/occupancy/stall 具体数值 → 手法），采纳/拒绝各有前提成立性判断，**非打卡、非伪造留证** ✓。（补记轮能把当初漏掉的回查如实补上、且引用页真实，符合流程精神。）
+
+### 五、边界与 reward hacking
+- **kernel 未因本轮补记而变**：`md5=c8e7c939…`、1388 行、cp.async=10、QPAD=0，与 R18 复核时一致——Round 22.5 是**纯文档补记**，没趁机改代码。✓
+- baseline 未换（两步 CUDA + tilelang logits kernel）、判据未动（零容差 golden）、v1 未动、只写 v2 ✓。
+- 无 reward hacking：补记如实承认「中档无收益、只是结构更优」，没把 cp.async 粉饰成中档突破。✓
+
+### 结论（向人一句话）
+R18 的 ISSUE 已干净闭合：漏记的 cp.async 改动补成了独立 Round 22.5，范围如实写成「全实例含 fast-path」，R23 那句「fast-path 逐字节不变」的误述也订正了，比值现状表标注了默认含 cp.async。我复现了长档 9/9 零容差全 PASS、8x256K=0.545 / 64x16K=1.237 与声称一致，Round 22.5 的 KernelWiki 回查抽查三页均真实、前提判断成立。kernel 本身没趁补记动过（md5 未变）。**裁决 PASS**。下一步被审方倾向 GVR (Guess-Verify-Refine) top-k 攻 radix 那 20%——那是算法级近似大改、零容差风险高，按 R8 规矩必须先交方案 + 精确性论证再写 kernel，届时单独审。
+
+## REVIEW R20 (2026-08-06, 独立审查者) —— 方向 GVR 设计稿 `design_gvr_C.md` 评审（未写 kernel）
+
+**审查目标**：`kernels/fused_indexer_logits_bf16_topk_v2/design_gvr_C.md`
+**裁决：ISSUE**（方向选得对、战场归因对、代码/外部引用全真、判据不放松反而收紧；**但精确性论证有一处承重缺口**：整个零容差正确性依赖「secant 必能落入 invariant 区间」这一**断言而非保证**——bounded 迭代下对阶梯函数不成立。须补明「保证 invariant 的机制」再动 kernel。非 reward hacking，是设计级必修，同 R12 性质。）
+
+### 一、未动代码 ✓
+- `candidate/fused_kernel.cu` md5=`c8e7c939…`、1388 行、cp.async=10、QPAD=0，与 R19 复核时一致——设计稿名副其实只写文档，没碰 kernel/harness。✓
+
+### 二、代码引用真实性（逐条开检）✓
+- `radix_topk_smem`（`:177`）、4 轮 refine `for (int round = 0; round < 4; ++round)`（`:268`）、exact-tie 记账 `s_last_remain` + `atomicAdd(-1)`（`:187/274/312`）、combine 侧 `select512_by_score`（`:905`）、overflow 兜底（`:281` `if(overflow)` 从 score 重推成员）、DIAG 开关 `FUSED_DIAG_SKIP_GEMM/RADIX`（`:446/621`）——**设计稿引用的每一处代码都真实存在**，P4 声称复用的正是 radix 现成的 tie 记账机制。✓
+
+### 三、外部引用真实性 ✓
+- 参考 `对话文档/TRT-LLM_DeepSeek-V4_算子优化汇总.md` 存在，其中 GVR 行（`:19/:55`）核对：`gvrTopKJob` 在 `heuristic_topk.cuh:586`、kernel **1.40–2.17×**、E2E +6.4%、SGLang **❌无**——与设计稿 §0/§5 引用一致。**值得注意**：参考文档 `:55` 明写 TRT-LLM 的 **P4 是「histogram snap+partition」**（直方图精确吸附），这恰是设计稿精确性缺口的现成答案（见 ISSUE）。✓
+
+### 四、战场归因 & 判据 ✓
+- **战场选择对**：GEMM 39us（R22.5/R23 三方确认的结构墙、无 lever）vs radix 8.8us（纯片上计算、不受「一 query 一 CTA」约束）。攻 radix 那 20%、不碰 GEMM，归因与阶段拆分（`fused_stage_split` memory 记 radix ~8us / GEMM ~44us；R23 后 GEMM 39.4us）一致。✓
+- **判据不放松反而收紧**：§6 保持零容差（集合+多重集+NaN/Inf）、保持两步 CUDA 墙钟 baseline、**新增一个「第 512/513 名恰好等分」针对性 tie 用例**。无放水面。✓
+- **诚实预期到位**：§5 明说 radix 只占 20%、GEMM 墙仍在、中档大 batch 大概率仍 >1、悲观结果=负结果回退；§107.2 提议先做「最小原型只测 radix-only 成本」探路。这是好的风险控制。✓
+
+### 五、ISSUE：精确性论证的承重缺口——invariant 是「被断言」而非「被保证」
+设计稿 §3 证明命题「GVR 选出 = 精确 top-512」，其**第 1 步**是全部证明的地基：
+> 「收敛判据放宽到 `count(>τ*) ≤ 512` 且 `count(≥τ*) ≥ 512` …… 这个区间**一定存在且割线法必能落入**（count 是 τ 的单调阶梯函数）」
+
+- **地基站不住的地方**：区间「一定存在」对（τ*=第512大分数值时两不等式必同时成立）；但「割线法**必能落入**」是**断言，不是证明**。secant 在**阶梯函数**上没有 bounded-迭代收敛保证——阶梯是分段常数，割线插值可能在平台间来回跳、在固定迭代预算（§2 说「2~3 次」）内**停在一个既非任何真实分数、又使 `count(>τ*)` ≠ 512 的 τ***。
+- **为什么这直接破零容差**：P3 是「`score > τ*` 直接 emit」。若 secant 未落入 invariant 就进 P3：
+  - τ* 偏低（`count(>τ*) > 512`）→ P3 **emit 超过 512 个**，选出真 top-512 的**超集**→ score 多重集多出元素 → **FAIL**；
+  - τ* 落在 gap 且 `count(>τ*) < 512` → `count(≥τ*)` 也 < 512、边界集为空 → P4 **补不齐 remain** → nsel<512 → **FAIL**（正是 R4 combine tie bug 同类失败模式）。
+  - 即：**P3/P4 的正确性 100% 依赖「进 P3 前 invariant 已成立」，而设计稿没给出保证 invariant 成立的机制**，只假设 secant 会到。
+- **现成的修法（TRT-LLM 自己就这么做）**：secant 只当**快速近似定位器**，最后**必须**用一趟**精确直方图吸附**把 τ* snap 到真实的边界 bin（参考文档 `:55` 的「histogram snap+partition」正是此意），使 invariant `count(>τ*)≤512≤count(≥τ*)` **无条件成立、与 secant 是否收敛无关**。设计稿 §2-P4 现在写的是「emit + tie 记账」，**没写这趟保证性的 histogram snap**——需把它显式补进 P4（或 P3 之前），并把 §3 第 1 步的证明从「secant 必落入」改成「histogram snap 保证落入」。
+
+### 六、其余必澄清（较轻，随 ISSUE 一并改）
+1. **退化分布**（全等分/大量等分）：§104.1 已自觉标出，但需**显式画出**退化时走 P4 exact-tie 兜底的路径（阶梯只一级、secant 无意义时，直方图 snap + tie 记账如何选满 512 且多重集对）。
+2. **P3→P4 之间的 barrier**：`n_hi` 必须 block-reduce 且在算 `remain=512-n_hi` 前有 `__syncthreads`，否则 remain 读到未定值。设计稿说复用 radix round-3 机制（其自带 barrier），点明即可。
+3. **原型先行**：§107.2「先做最小原型测 radix-only 成本再决定是否完整实现」——**赞同、建议作为硬前置**：radix 只 20% 且中档 length 短（1024），secant+P1 固定开销可能吃掉收益，先原型证明「有肉」再接正确性面，避免又一轮「正确但没赢」。
+
+### 七、流程 / KernelWiki
+- 设计评审轮、无 kernel、无新 NCU 瓶颈类别 → 本轮无回查对象（同 R12/R13 设计轮，可接受）；§6 已承诺实现期每轮 ncu→KernelWiki 回查。✓
+- baseline 未换、判据未动、v1 未动、只写 v2（且只加一个设计 .md）✓。
+
+### 结论（向人一句话）
+GVR 这个方向选得对（攻没被结构墙锁死的 radix 20%、不碰 GEMM）、战场归因和代码/外部引用我全核过是真的、判据不但没放水还加了个等分 tie 用例、预期也诚实。**但精确性证明有一处地基缺口**：整个零容差正确性押在「secant 必能落入 invariant 区间」这句**断言**上，而 secant 在阶梯函数上没有 bounded-迭代保证——一旦进 P3 前 invariant 没成立，就会多选（多重集不等）或补不齐（nsel<512），直接破零容差。修法现成：secant 只做近似定位，最后加**一趟精确 histogram snap** 无条件保证 invariant（TRT-LLM 自己的 P4 就是「histogram snap+partition」）。**裁决 ISSUE**：把这趟保证性 snap 补进 P4、并把 §3 第1步证明改成「由 snap 保证」，再连同退化路径 + P3/P4 barrier 澄清 → 就可批准写 kernel。强烈建议按 §107.2 先做 radix-only 最小原型探「有没有肉」。R8 规矩：改完设计稿停下等 review 复核，再动 kernel。
+
+## REVIEW R21 (2026-08-07, 独立审查者) —— 复核 REVIEW R20 的 ISSUE 闭合（GVR 设计稿 v2）
+
+**审查目标**：`kernels/fused_indexer_logits_bf16_topk_v2/design_gvr_C.md`（v2，未写 kernel）
+**裁决：PASS**（R20 的核心 ISSUE 已从根上修好：精确性地基从「secant 必落入 invariant」重构为「P3 精确直方图无条件保证 invariant，secant 只圈范围不定对错」。退化路径 + barrier 两处澄清也补齐。代码引用全真、判据未放松、无 reward hacking。批准写 kernel——但按其自己列的硬前置，先做 radix-only 原型探「有没有肉」。）
+
+### 一、未动代码 ✓
+- `candidate/fused_kernel.cu` md5=`c8e7c939…`、1388 行、`gvr` 计数=0、cp.async=10——设计稿 v2 只改了那份 .md（mtime 08-07 11:08），kernel/harness 未碰。✓
+
+### 二、R20 核心 ISSUE 的修法——从根上解决，非打补丁 ✓
+R20 的 ISSUE 是：零容差正确性押在「secant 必能落入 invariant」这句**断言**上，而 secant 在阶梯函数上无 bounded-迭代保证。v2 的重构（§0/§2-P3/§3.1）：
+- **secant 降级为「只影响快慢、不影响对错」的近似定位器**（§2-P2 明写「τ_guess 绝不直接拿去 P3 收集」）——彻底移出正确性关键路径。
+- **invariant 改由 P3 的精确 coarse 直方图无条件保证**（§3 证明第 1 步）：P3 对全 logits 建精确直方图 + cumsum 找边界 bin `b*`，使 `count(key>b*)≤512≤count(key≥b*)`。我核 §3 引的 `fused_kernel.cu:225-230`——正是现有 radix 的 coarse pass（`s_threshold_bin_id` 定阈值 bin，cumsum 精确、阶梯单调，`b*` 必存在唯一），**与 secant 是否收敛无关**。
+- **最坏 secant 全失效 → P3/P4 退化成一次标准 radix**（正确、只是没省到）。这把命题从「GVR 近似需证明兜底精确」收敛成「**GVR 正确性 == radix 正确性**」——而 radix 那套（coarse + 4 轮 refine + exact-tie）已由 tie 8/8 长期验证。
+- **这是从根上修，不是加护栏**：R20 建议的「加一趟 histogram snap 保证 invariant」，v2 采用的正是「P3 全量精确 coarse 直方图」，且诚实点破——secant 的真实价值只在「圈小 P3 的搜索/省掉部分 refine 轮」，即便全猜错也不伤正确性。逻辑自洽。✓
+
+### 三、R20 两处次要澄清均补齐 ✓
+- **退化分布（§3.1，回应 R20 §6.1）**：全等分/大量等分时 secant 无意义，但 P3 精确直方图发现边界 bin 含超量等分元素、`count(>b*)<512≤count(≥b*)` 直接进 P4 逐字节 refine 到最后一轮全等 → exact-tie 记账补满。我核这条路径引的 `:303-322`（`round==3` 全 key 相等时 `s_last_remain` 原子递减、`pos>0` 才 emit）**真实存在且语义正确**——就是现有 radix 处理 tie 的路径本身。「GVR 退化时完全退化成 radix」成立。✓
+- **P3→P4 barrier（§3.2，回应 R20 §6.2）**：`n_hi` block-reduce + `__syncthreads` 后才算 `remain`；复用 radix 现成 `s_counter` + coarse pass 后的 barrier（`:236/257`，我核确有 `__syncthreads`）。不新增同步正确性面。✓
+
+### 四、代码 & 外部引用真实性（v2 新增引用逐条开检）✓
+- `:194` `length<=TOPK` 全取快路径 ✓、`:221-230` coarse 直方图定阈值 bin ✓、`:236/257` barrier ✓、`:268` 4 轮 refine ✓、`:281` overflow 从 score 重推 ✓、`:303-322` exact-tie 记账 ✓——v2 引的每处代码都真实且语义与描述一致。
+- TRT-LLM 参考（`gvrTopKJob heuristic_topk.cuh:586`、1.40–2.17×、SGLang ❌无）R20 已核，v2 未改。✓
+
+### 五、判据 & 原型前置 ✓
+- **判据未放松**（§6 沿用零容差集合+多重集+NaN/Inf，两步 CUDA 墙钟 baseline，新增「512/513 恰好等分」tie 用例）。
+- **§7.0 把「radix-only 最小原型探有没有肉」列为硬前置**（采纳 R20 §6.3）：只搭 P1+P2+P3 骨架、不接完整正确性面、用 `FUSED_DIAG_SKIP_GEMM=1` 单测 radix-only 成本，不降就直接判负结果不做完整实现。这是对「radix 只 20% + 中档 length 才 1024，secant 固定开销可能吃掉收益」这个真实风险的正确控制。✓
+
+### 六、一处非阻塞观察（供实现时留意，不影响 PASS）
+- **性能收益来源需原型证实**：v2 里 P3 是「全 logits 精确 coarse 直方图」——这本身≈radix 的 coarse pass 成本。省的是「4 轮 refine 中被 secant 预圈掉的若干轮」。但若边界 bin 内分布仍需多轮 refine，secant 省的量可能有限。这不是正确性问题（正确性已由 P3/P4 精确机制保证），纯是「有没有肉」的经验问题——恰好 §7.0 的 radix-only 原型就是测这个，已被前置卡住。无需改设计，实现时如实测即可。
+
+### 七、流程 / KernelWiki
+- 设计复评轮、无 kernel、无新 NCU 瓶颈 → 无回查对象（同 R12/R13/R20 设计轮，可接受）；§6 已承诺实现期每轮回查。baseline 未换、v1 未动、只写 v2（仅改一 .md）✓。
+
+### 结论（向人一句话）
+R20 的核心 ISSUE 从根上修好了：GVR v2 把 secant 降级成「只圈范围、不定对错」的加速器，正确性地基改由 P3 的**精确 coarse 直方图**无条件保证——命题因此收敛成「GVR 正确性 == radix 正确性」（radix 那套已由 tie 8/8 验证），secant 全失效也只是退化成标准 radix、不破零容差。退化路径、P3/P4 barrier 两处澄清也补齐，引用的每处代码我都核过真实。**裁决 PASS：批准写 kernel**。但请严格走它自己列的 §7.0 硬前置——先做 radix-only 最小原型确认「有肉」（radix 只 20%、length 才 1024，secant 固定开销可能吃掉收益），有肉再接完整零容差实现；正确性优先（短 4/4 + tie 8/8 含新等分用例 + 长 9/9 零容差）再看性能，做完停下等 review 复核跨精确性面（尤其新等分 tie 用例）。

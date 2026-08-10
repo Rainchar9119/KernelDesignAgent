@@ -1,0 +1,162 @@
+===TAIL N=17 H=17===
+  [bf16 N=    17 H= 17 int32] works=289 (total_works%4=1)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [bf16 N=    17 H= 17 int64] works=289 (total_works%4=1)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=    17 H= 17 int32] works=289 (total_works%4=1)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=    17 H= 17 int64] works=289 (total_works%4=1)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+RESULT: correctness=PASS
+===TAIL N=1 H=17===
+  [bf16 N=     1 H= 17 int32] works=17 (total_works%4=1)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [bf16 N=     1 H= 17 int64] works=17 (total_works%4=1)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=     1 H= 17 int32] works=17 (total_works%4=1)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=     1 H= 17 int64] works=17 (total_works%4=1)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+RESULT: correctness=PASS
+===TAIL N=3 H=17===
+  [bf16 N=     3 H= 17 int32] works=51 (total_works%4=3)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [bf16 N=     3 H= 17 int64] works=51 (total_works%4=3)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=     3 H= 17 int32] works=51 (total_works%4=3)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=     3 H= 17 int64] works=51 (total_works%4=3)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+RESULT: correctness=PASS
+===TAIL N=1023 H=17===
+  [bf16 N=  1023 H= 17 int32] works=17391 (total_works%4=3)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=7.812e-03)  candidate allclose=True (max=7.812e-03)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [bf16 N=  1023 H= 17 int64] works=17391 (total_works%4=3)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=7.812e-03)  candidate allclose=True (max=7.812e-03)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=  1023 H= 17 int32] works=17391 (total_works%4=3)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=  1023 H= 17 int64] works=17391 (total_works%4=3)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+RESULT: correctness=PASS
+===TAIL N=17 H=8===
+  [bf16 N=    17 H=  8 int32] works=136 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [bf16 N=    17 H=  8 int64] works=136 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=    17 H=  8 int32] works=136 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=    17 H=  8 int64] works=136 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+RESULT: correctness=PASS
+===TAIL N=7 H=8===
+  [bf16 N=     7 H=  8 int32] works=56 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [bf16 N=     7 H=  8 int64] works=56 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=     7 H=  8 int32] works=56 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=     7 H=  8 int64] works=56 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+RESULT: correctness=PASS
+===TAIL N=13 H=16===
+  [bf16 N=    13 H= 16 int32] works=208 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [bf16 N=    13 H= 16 int64] works=208 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=    13 H= 16 int32] works=208 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=    13 H= 16 int64] works=208 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+RESULT: correctness=PASS
+===TAIL N=17 H=32===
+  [bf16 N=    17 H= 32 int32] works=544 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [bf16 N=    17 H= 32 int64] works=544 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=    17 H= 32 int32] works=544 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=    17 H= 32 int64] works=544 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+RESULT: correctness=PASS
+===TAIL N=5 H=8===
+  [bf16 N=     5 H=  8 int32] works=40 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [bf16 N=     5 H=  8 int64] works=40 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=     5 H=  8 int32] works=40 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+  [fp8 N=     5 H=  8 int64] works=40 (total_works%4=0)
+    (1) bit-parity   : PASS  mismatch=0
+    (2) golden       : baseline allclose=True (max=0.000e+00)  candidate allclose=True (max=0.000e+00)
+    (3) untouched    : PASS  dirty_guard_bytes=0
+RESULT: correctness=PASS

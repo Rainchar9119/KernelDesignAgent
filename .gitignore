@@ -1,5 +1,20 @@
 # NVIDIA Nsight Compute profiling 报告 (二进制产物，可重新生成，不入库)
+# 全局生效，已覆盖 rounds/ 与 profile/ 下的 .ncu-rep
 *.ncu-rep
+
+# rounds/ 每轮存档：snapshot.cuh / meta.yaml / notes.md / build.log / ncu_full.txt 均为
+# 轻量文本，是回溯资产，**入库**（无需在此列出，默认跟踪）；大二进制 .ncu-rep 已由上面规则挡住。
+# profile/ 下的 REPORT.md / analysis 脚本等文本同样有价值、保持入库，故不整目录 ignore——
+# profile/ 的大产物就是 .ncu-rep，已被全局规则覆盖。
+
+# scratch / 临时工作副本（不入库，避免污染仓库）
+**/candidate/backups/
+**/_snap_*/
+**/dev/
+**/to_kaiyuan/
+reviewer/reviews/**/_ncu_*.py
+reviewer/reviews/**/_ncu_*.txt
+reviewer/reviews/**/_probe_*.py
 
 # Python 缓存
 __pycache__/
@@ -19,3 +34,12 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+
+# 构建产物 / ninja 缓存 / 编译出的可执行文件（不入库）
+**/build_*/
+*.ninja
+.ninja_deps
+.ninja_log
+**/localbench/build_*/
+# 无扩展名的编译产物（如 cub-cccl/bench_topk 可执行文件）——按需在此显式列出
+kernel-agent/kernels/TopK_Indexer/cub-cccl/bench_topk

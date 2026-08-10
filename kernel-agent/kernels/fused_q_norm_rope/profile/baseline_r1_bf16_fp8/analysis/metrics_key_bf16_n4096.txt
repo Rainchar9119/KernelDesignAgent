@@ -1,0 +1,45 @@
+=== bf16_n4096 :: full_bf16_n4096.ncu-rep ===
+kernel: fused_q_norm_rope
+  duration                         = 7.92e+04 ns
+  SM SOL %                         = 46.54 %
+  Mem SOL %                        = 77.45 %
+  DRAM read %peak                  = 42.94 %
+  DRAM write %peak                 = 34.51 %
+  DRAM bytes read                  = 2.694e+08 byte
+  DRAM bytes write                 = 2.165e+08 byte
+  achieved occ %                   = 80.13 %
+  theoretical occ %                = 100 %
+  waves/SM                         = 26.95
+  grid size                        = 65536
+  regs/thread                      = 32 register/thread
+  occ lim regs                     = 16 block
+  occ lim smem                     = 42 block
+  occ lim warps                    = 16 block
+  occ lim blocks                   = 32 block
+  SM count                         = 152
+  IPC                              = 1.993 inst/cycle
+  LSU pipe %                       = 18.34 %
+  ALU pipe %                       = 37.91 %
+  FMA pipe %                       = 19.26 %
+  L1 hit %                         = 9.458 %
+  L2 hit %                         = 1.025 %
+  store bytes/sector (max32)       = 32 byte/sector
+  global LD insts                  = 1.049e+06 inst
+  global ST insts                  = 7.864e+05 inst
+  shared LD insts                  = 2.621e+05 inst
+  shared ST insts                  = 2.621e+05 inst
+  local LD (spill)                 = 0 inst
+  local ST (spill)                 = 0 inst
+  --- stalls (warps stalled per issue-active cycle) ---
+  stall long_scoreboard              = 18.1854
+  stall short_scoreboard             = 1.9719
+  stall wait                         = 1.6684
+  stall not_selected                 = 1.2281
+  stall selected                     = 1.0000
+  stall math_pipe_throttle           = 0.5835
+  stall drain                        = 0.1719
+  stall no_instruction               = 0.1482
+  stall mio_throttle                 = 0.0275
+  stall lg_throttle                  = 0.0000
+  stall barrier                      = 0.0000
+  stall membar                       = 0.0000

@@ -1,0 +1,2516 @@
+{
+  "gpu": "CF-NG-GBZZ2-O-L",
+  "cc": [
+    10,
+    0
+  ],
+  "torch": "2.12.0+cu132",
+  "page_size": 64,
+  "iters": 50,
+  "rows": [
+    {
+      "B": 1,
+      "L": 1024,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.03484800085425377,
+        "flashinfer": 0.027871999889612198,
+        "sglang_v2": 0.01408000010997057
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 1024,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.02396799996495247,
+        "flashinfer": 0.025696000084280968,
+        "sglang_v2": 0.012896000407636166
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 1024,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.06390400230884552,
+        "flashinfer": 0.0748480036854744,
+        "sglang_v2": 0.03766399994492531
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 1024,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.05708799883723259,
+        "flashinfer": 0.06588800251483917,
+        "sglang_v2": 0.028672000393271446
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 1024,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.054368000477552414,
+        "flashinfer": 0.058687999844551086,
+        "sglang_v2": 0.024480000138282776
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 1024,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.061055999249219894,
+        "flashinfer": 0.0772479996085167,
+        "sglang_v1": 0.043807998299598694,
+        "sglang_v2": 0.03308799862861633
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 1024,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.055296000093221664,
+        "flashinfer": 0.06588800251483917,
+        "sglang_v1": 0.03190400078892708,
+        "sglang_v2": 0.028831999748945236
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 1024,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.056223999708890915,
+        "flashinfer": 0.06390400230884552,
+        "sglang_v1": 0.029343999922275543,
+        "sglang_v2": 0.025407999753952026
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 1024,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.06185600161552429,
+        "flashinfer": 0.06739199906587601,
+        "sglang_v1": 0.03136000037193298,
+        "sglang_v2": 0.02956799976527691
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 1024,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.055776000022888184,
+        "flashinfer": 0.04918399825692177,
+        "sglang_v1": 0.020128000527620316,
+        "sglang_v2": 0.016863999888300896
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 1024,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.06499200314283371,
+        "flashinfer": 0.07766400277614594,
+        "sglang_v1": 0.013856000266969204,
+        "sglang_v2": 0.012959999963641167
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 1024,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.06870400160551071,
+        "flashinfer": 0.08137600123882294,
+        "sglang_v1": 0.04214400053024292,
+        "sglang_v2": 0.03385600075125694
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 1024,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.054368000477552414,
+        "flashinfer": 0.06415999680757523,
+        "sglang_v1": 0.028031999245285988,
+        "sglang_v2": 0.02518399991095066
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 1024,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.05612799897789955,
+        "flashinfer": 0.058559998869895935,
+        "sglang_v1": 0.027264000847935677,
+        "sglang_v2": 0.022943999618291855
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 1024,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.05999999865889549,
+        "flashinfer": 0.049855999648571014,
+        "sglang_v1": 0.018239999189972878,
+        "sglang_v2": 0.01616000011563301
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 2048,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.05484800040721893,
+        "flashinfer": 0.06684800237417221,
+        "sglang_v2": 0.031168000772595406
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 2048,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.0578560009598732,
+        "flashinfer": 0.07017599791288376,
+        "sglang_v2": 0.03299200162291527
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 2048,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.034623999148607254,
+        "flashinfer": 0.0331839993596077,
+        "sglang_v2": 0.015519999898970127
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 2048,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.05049600079655647,
+        "flashinfer": 0.05990400165319443,
+        "sglang_v2": 0.025599999353289604
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 2048,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.05993599817156792,
+        "flashinfer": 0.05257600173354149,
+        "sglang_v2": 0.023615999147295952
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 2048,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.05382400006055832,
+        "flashinfer": 0.0655680000782013,
+        "sglang_v1": 0.031072000041604042,
+        "sglang_v2": 0.028960000723600388
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 2048,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.054976001381874084,
+        "flashinfer": 0.06697600334882736,
+        "sglang_v1": 0.03248000144958496,
+        "sglang_v2": 0.02860799990594387
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 2048,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.057440001517534256,
+        "flashinfer": 0.06480000168085098,
+        "sglang_v1": 0.03270399942994118,
+        "sglang_v2": 0.026496000587940216
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 2048,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.03283200040459633,
+        "flashinfer": 0.03580800071358681,
+        "sglang_v1": 0.016831999644637108,
+        "sglang_v2": 0.01568000018596649
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 2048,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.05939200147986412,
+        "flashinfer": 0.04732799902558327,
+        "sglang_v1": 0.020031999796628952,
+        "sglang_v2": 0.017023999243974686
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 2048,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.06319999694824219,
+        "flashinfer": 0.07884799689054489,
+        "sglang_v1": 0.04032000154256821,
+        "sglang_v2": 0.03392000123858452
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 2048,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.05455999821424484,
+        "flashinfer": 0.06464000046253204,
+        "sglang_v1": 0.03001599945127964,
+        "sglang_v2": 0.027712000533938408
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 2048,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.05958399921655655,
+        "flashinfer": 0.07206399738788605,
+        "sglang_v1": 0.03347200155258179,
+        "sglang_v2": 0.030559999868273735
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 2048,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.06592000275850296,
+        "flashinfer": 0.06579200178384781,
+        "sglang_v1": 0.028224000707268715,
+        "sglang_v2": 0.02598400041460991
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 2048,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.055776000022888184,
+        "flashinfer": 0.03939199820160866,
+        "sglang_v1": 0.0191040001809597,
+        "sglang_v2": 0.016063999384641647
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 2048,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.06281600147485733,
+        "flashinfer": 0.0745600014925003,
+        "sglang_v2": 0.03798399865627289
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 2048,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.051072001457214355,
+        "flashinfer": 0.06163199990987778,
+        "sglang_v2": 0.03167999908328056
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 2048,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.061216000467538834,
+        "flashinfer": 0.0676800012588501,
+        "sglang_v2": 0.03033600002527237
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 2048,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.06019200012087822,
+        "flashinfer": 0.026208000257611275,
+        "sglang_v2": 0.01321600005030632
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 2048,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.03702399879693985,
+        "flashinfer": 0.026335999369621277,
+        "sglang_v2": 0.012864000163972378
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 4096,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.059967998415231705,
+        "flashinfer": 0.07248000055551529,
+        "sglang_v2": 0.03324799984693527
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 4096,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.05510399863123894,
+        "flashinfer": 0.06806399673223495,
+        "sglang_v2": 0.03372799977660179
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 4096,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.055424001067876816,
+        "flashinfer": 0.06511999666690826,
+        "sglang_v2": 0.0307839997112751
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 4096,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.058240000158548355,
+        "flashinfer": 0.07062400132417679,
+        "sglang_v2": 0.030432000756263733
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 4096,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.14188799262046814,
+        "flashinfer": 0.05459199845790863,
+        "sglang_v2": 0.024447999894618988
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 4096,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.05596800148487091,
+        "flashinfer": 0.06911999732255936,
+        "sglang_v1": 0.033344000577926636,
+        "sglang_v2": 0.03328000009059906
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 4096,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.05363199859857559,
+        "flashinfer": 0.06377600133419037,
+        "sglang_v1": 0.03545600175857544,
+        "sglang_v2": 0.031647998839616776
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 4096,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.06752000004053116,
+        "flashinfer": 0.08124800026416779,
+        "sglang_v1": 0.032287999987602234,
+        "sglang_v2": 0.028224000707268715
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 4096,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.06140799820423126,
+        "flashinfer": 0.06729599833488464,
+        "sglang_v1": 0.031328000128269196,
+        "sglang_v2": 0.027103999629616737
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 4096,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.1549759954214096,
+        "flashinfer": 0.056384000927209854,
+        "sglang_v1": 0.022431999444961548,
+        "sglang_v2": 0.016896000131964684
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 4096,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.05152000114321709,
+        "flashinfer": 0.061535999178886414,
+        "sglang_v1": 0.030912000685930252,
+        "sglang_v2": 0.025760000571608543
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 4096,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.0562559999525547,
+        "flashinfer": 0.06569600105285645,
+        "sglang_v1": 0.03593600168824196,
+        "sglang_v2": 0.03500799834728241
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 4096,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.07241600006818771,
+        "flashinfer": 0.08553600311279297,
+        "sglang_v1": 0.04476799815893173,
+        "sglang_v2": 0.03718400001525879
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 4096,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.057151999324560165,
+        "flashinfer": 0.06387200206518173,
+        "sglang_v1": 0.029311999678611755,
+        "sglang_v2": 0.021663999184966087
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 4096,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.15510399639606476,
+        "flashinfer": 0.041120000183582306,
+        "sglang_v1": 0.02051199972629547,
+        "sglang_v2": 0.015519999898970127
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 4096,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.061983998864889145,
+        "flashinfer": 0.07142399996519089,
+        "sglang_v2": 0.03436800092458725
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 4096,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.07184000313282013,
+        "flashinfer": 0.08697599917650223,
+        "sglang_v2": 0.041120000183582306
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 4096,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.07097599655389786,
+        "flashinfer": 0.08636800199747086,
+        "sglang_v2": 0.034623999148607254
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 4096,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.05471999943256378,
+        "flashinfer": 0.0522879995405674,
+        "sglang_v2": 0.01865600049495697
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 4096,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.14390400052070618,
+        "flashinfer": 0.028351999819278717,
+        "sglang_v2": 0.01398400031030178
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 8192,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.05955199897289276,
+        "flashinfer": 0.06972800195217133,
+        "sglang_v2": 0.031647998839616776
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 8192,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.06998399645090103,
+        "flashinfer": 0.06496000289916992,
+        "sglang_v2": 0.0315839983522892
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 8192,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.06726399809122086,
+        "flashinfer": 0.06947200000286102,
+        "sglang_v2": 0.031488001346588135
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 8192,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.16448000073432922,
+        "flashinfer": 0.0767040029168129,
+        "sglang_v2": 0.032735999673604965
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 8192,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.1451520025730133,
+        "flashinfer": 0.059647999703884125,
+        "sglang_v2": 0.02598400041460991
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 8192,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.06511999666690826,
+        "flashinfer": 0.06803199648857117,
+        "sglang_v1": 0.032575998455286026,
+        "sglang_v2": 0.030368000268936157
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 8192,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.06508799642324448,
+        "flashinfer": 0.07334399968385696,
+        "sglang_v1": 0.03471999987959862,
+        "sglang_v2": 0.03190400078892708
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 8192,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.07276800274848938,
+        "flashinfer": 0.06982400268316269,
+        "sglang_v1": 0.03174399957060814,
+        "sglang_v2": 0.028896000236272812
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 8192,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.14425599575042725,
+        "flashinfer": 0.06281600147485733,
+        "sglang_v1": 0.02985600009560585,
+        "sglang_v2": 0.023264000192284584
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 8192,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.1590079963207245,
+        "flashinfer": 0.048448000103235245,
+        "sglang_v1": 0.027103999629616737,
+        "sglang_v2": 0.016767999157309532
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 8192,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.06355199962854385,
+        "flashinfer": 0.07436800003051758,
+        "sglang_v1": 0.04009599983692169,
+        "sglang_v2": 0.03392000123858452
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 8192,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.07289600372314453,
+        "flashinfer": 0.09174399822950363,
+        "sglang_v1": 0.040800001472234726,
+        "sglang_v2": 0.03939199820160866
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 8192,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.06876800209283829,
+        "flashinfer": 0.08079999685287476,
+        "sglang_v1": 0.03830400109291077,
+        "sglang_v2": 0.03478400036692619
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 8192,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.14819200336933136,
+        "flashinfer": 0.05974400043487549,
+        "sglang_v1": 0.0272000003606081,
+        "sglang_v2": 0.022304000332951546
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 8192,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.15113599598407745,
+        "flashinfer": 0.0451200008392334,
+        "sglang_v1": 0.025119999423623085,
+        "sglang_v2": 0.01727999933063984
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 8192,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.06883200258016586,
+        "flashinfer": 0.06265600025653839,
+        "sglang_v2": 0.03017600066959858
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 8192,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.07481600344181061,
+        "flashinfer": 0.06886400282382965,
+        "sglang_v2": 0.031007999554276466
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 8192,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.07443200051784515,
+        "flashinfer": 0.0658240020275116,
+        "sglang_v2": 0.0272000003606081
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 8192,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.1472640037536621,
+        "flashinfer": 0.05100800096988678,
+        "sglang_v2": 0.015744000673294067
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 8192,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.16182400286197662,
+        "flashinfer": 0.03283200040459633,
+        "sglang_v2": 0.016863999888300896
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 16384,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.0838719978928566,
+        "flashinfer": 0.07206399738788605,
+        "sglang_v2": 0.032255999743938446
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 16384,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.08947200328111649,
+        "flashinfer": 0.0692799985408783,
+        "sglang_v2": 0.03580800071358681
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 16384,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.10409600287675858,
+        "flashinfer": 0.08326400071382523,
+        "sglang_v2": 0.04057599976658821
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 16384,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.15772800147533417,
+        "flashinfer": 0.06672000139951706,
+        "sglang_v2": 0.03136000037193298
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 16384,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.1679680049419403,
+        "flashinfer": 0.07158400118350983,
+        "sglang_v2": 0.026784000918269157
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 16384,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.0857279971241951,
+        "flashinfer": 0.08352000266313553,
+        "sglang_v1": 0.042367998510599136,
+        "sglang_v2": 0.03702399879693985
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 16384,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.09827200323343277,
+        "flashinfer": 0.06732799857854843,
+        "sglang_v1": 0.037248000502586365,
+        "sglang_v2": 0.029888000339269638
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 16384,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.0963200032711029,
+        "flashinfer": 0.06393600255250931,
+        "sglang_v1": 0.03705599904060364,
+        "sglang_v2": 0.026016000658273697
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 16384,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.15433600544929504,
+        "flashinfer": 0.06985600292682648,
+        "sglang_v1": 0.03545600175857544,
+        "sglang_v2": 0.023072000592947006
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 16384,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.14214399456977844,
+        "flashinfer": 0.037151999771595,
+        "sglang_v1": 0.03219199925661087,
+        "sglang_v2": 0.018848000094294548
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 16384,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.08988799899816513,
+        "flashinfer": 0.07692799717187881,
+        "sglang_v1": 0.04230400174856186,
+        "sglang_v2": 0.03731200098991394
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 16384,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.10502400249242783,
+        "flashinfer": 0.06787200272083282,
+        "sglang_v1": 0.03152000159025192,
+        "sglang_v2": 0.02768000029027462
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 16384,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.10726399719715118,
+        "flashinfer": 0.0708480030298233,
+        "sglang_v1": 0.033215999603271484,
+        "sglang_v2": 0.02816000021994114
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 16384,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.1457280069589615,
+        "flashinfer": 0.057631999254226685,
+        "sglang_v1": 0.0272000003606081,
+        "sglang_v2": 0.02035200037062168
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 16384,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.16131199896335602,
+        "flashinfer": 0.03798399865627289,
+        "sglang_v1": 0.028896000236272812,
+        "sglang_v2": 0.0191040001809597
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 16384,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.104032002389431,
+        "flashinfer": 0.07487999647855759,
+        "sglang_v2": 0.03542400151491165
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 16384,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.10815999656915665,
+        "flashinfer": 0.06675200164318085,
+        "sglang_v2": 0.031231999397277832
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 16384,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.1101439967751503,
+        "flashinfer": 0.08284799754619598,
+        "sglang_v2": 0.031936001032590866
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 16384,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.157151997089386,
+        "flashinfer": 0.05209600180387497,
+        "sglang_v2": 0.018432000651955605
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 16384,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.1467839926481247,
+        "flashinfer": 0.03840000182390213,
+        "sglang_v2": 0.02067199908196926
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 32768,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.14767999947071075,
+        "flashinfer": 0.07523199915885925,
+        "sglang_v2": 0.03558399900794029
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 32768,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.16118399798870087,
+        "flashinfer": 0.08713600039482117,
+        "sglang_v2": 0.03999999910593033
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 32768,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.14636799693107605,
+        "flashinfer": 0.06835199892520905,
+        "sglang_v2": 0.03139200061559677
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 32768,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.15491199493408203,
+        "flashinfer": 0.07420799881219864,
+        "sglang_v2": 0.033376000821590424
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 32768,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.19871999323368073,
+        "flashinfer": 0.06335999816656113,
+        "sglang_v2": 0.02800000086426735
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 32768,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.14374400675296783,
+        "flashinfer": 0.06950400024652481,
+        "sglang_v1": 0.05084799975156784,
+        "sglang_v2": 0.028863999992609024
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 32768,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.14070400595664978,
+        "flashinfer": 0.06745599955320358,
+        "sglang_v1": 0.0506879985332489,
+        "sglang_v2": 0.028031999245285988
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 32768,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.14694400131702423,
+        "flashinfer": 0.0631679967045784,
+        "sglang_v1": 0.05270399898290634,
+        "sglang_v2": 0.025728000327944756
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 32768,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.1472959965467453,
+        "flashinfer": 0.06070400029420853,
+        "sglang_v1": 0.04966399818658829,
+        "sglang_v2": 0.025696000084280968
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 32768,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.20095999538898468,
+        "flashinfer": 0.0398080013692379,
+        "sglang_v1": 0.04710400104522705,
+        "sglang_v2": 0.024000000208616257
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 32768,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.13705599308013916,
+        "flashinfer": 0.06934399902820587,
+        "sglang_v1": 0.03996799886226654,
+        "sglang_v2": 0.0363520011305809
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 32768,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.1419840008020401,
+        "flashinfer": 0.06588800251483917,
+        "sglang_v1": 0.039872001856565475,
+        "sglang_v2": 0.02687999978661537
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 32768,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.15753600001335144,
+        "flashinfer": 0.07561600208282471,
+        "sglang_v1": 0.039583999663591385,
+        "sglang_v2": 0.028255999088287354
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 32768,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.15148800611495972,
+        "flashinfer": 0.05724800005555153,
+        "sglang_v1": 0.03673600032925606,
+        "sglang_v2": 0.021856000646948814
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 32768,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.18297599256038666,
+        "flashinfer": 0.04972799867391586,
+        "sglang_v1": 0.03763199970126152,
+        "sglang_v2": 0.025087999179959297
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 32768,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.14979200065135956,
+        "flashinfer": 0.07436800003051758,
+        "sglang_v2": 0.033504001796245575
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 32768,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.14032000303268433,
+        "flashinfer": 0.0605119988322258,
+        "sglang_v2": 0.029664000496268272
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 32768,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.14975999295711517,
+        "flashinfer": 0.05862399935722351,
+        "sglang_v2": 0.029343999922275543
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 32768,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.15033599734306335,
+        "flashinfer": 0.05286400020122528,
+        "sglang_v2": 0.022592000663280487
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 256,
+      "L": 32768,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.18518400192260742,
+        "flashinfer": 0.05273599922657013,
+        "sglang_v2": 0.02739199995994568
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 65536,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.16358399391174316,
+        "flashinfer": 0.08102399855852127,
+        "sglang_v2": 0.03814399987459183
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 65536,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.1480959951877594,
+        "flashinfer": 0.0684799998998642,
+        "sglang_v2": 0.03407999873161316
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 65536,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.1449279934167862,
+        "flashinfer": 0.06521599739789963,
+        "sglang_v2": 0.03094400092959404
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 65536,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.1632319986820221,
+        "flashinfer": 0.06719999760389328,
+        "sglang_v2": 0.03094400092959404
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 65536,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.15056000649929047,
+        "flashinfer": 0.066880002617836,
+        "sglang_v1": 0.08182399719953537,
+        "sglang_v2": 0.03244800120592117
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 65536,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.15811200439929962,
+        "flashinfer": 0.08646400272846222,
+        "sglang_v1": 0.08118399977684021,
+        "sglang_v2": 0.03187200054526329
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 65536,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.16227200627326965,
+        "flashinfer": 0.08451200276613235,
+        "sglang_v1": 0.08310399949550629,
+        "sglang_v2": 0.03468799963593483
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 65536,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.16518400609493256,
+        "flashinfer": 0.0697920024394989,
+        "sglang_v1": 0.08134400099515915,
+        "sglang_v2": 0.02800000086426735
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 65536,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.1504960060119629,
+        "flashinfer": 0.07305599749088287,
+        "sglang_v1": 0.054496001452207565,
+        "sglang_v2": 0.03280000016093254
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 65536,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.14499199390411377,
+        "flashinfer": 0.03126399964094162,
+        "sglang_v1": 0.04575999826192856,
+        "sglang_v2": 0.017472000792622566
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 65536,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.14934399724006653,
+        "flashinfer": 0.06921599805355072,
+        "sglang_v1": 0.054496001452207565,
+        "sglang_v2": 0.029664000496268272
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 65536,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.1677439957857132,
+        "flashinfer": 0.0682239979505539,
+        "sglang_v1": 0.052928000688552856,
+        "sglang_v2": 0.02864000014960766
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 65536,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.14480000734329224,
+        "flashinfer": 0.07318399846553802,
+        "sglang_v2": 0.033695999532938004
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 65536,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.15142400562763214,
+        "flashinfer": 0.07273600250482559,
+        "sglang_v2": 0.029184000566601753
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 65536,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.15667200088500977,
+        "flashinfer": 0.07072000205516815,
+        "sglang_v2": 0.03356799855828285
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 65536,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.16569599509239197,
+        "flashinfer": 0.05164799839258194,
+        "sglang_v2": 0.027648000046610832
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 131072,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.14528000354766846,
+        "flashinfer": 0.06752000004053116,
+        "sglang_v2": 0.03315199911594391
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 131072,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.10527999699115753,
+        "flashinfer": 0.031936001032590866,
+        "sglang_v2": 0.018303999677300453
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 131072,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.1472959965467453,
+        "flashinfer": 0.06924799829721451,
+        "sglang_v2": 0.03283200040459633
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 131072,
+      "K": 256,
+      "latency_ms": {
+        "torch.topk": 0.20652799308300018,
+        "flashinfer": 0.07475200295448303,
+        "sglang_v2": 0.03932800143957138
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 131072,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.14844800531864166,
+        "flashinfer": 0.0695360004901886,
+        "sglang_v1": 0.12857599556446075,
+        "sglang_v2": 0.032575998455286026
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 131072,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.1534080058336258,
+        "flashinfer": 0.07420799881219864,
+        "sglang_v1": 0.1279039978981018,
+        "sglang_v2": 0.03782400116324425
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 131072,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.14812800288200378,
+        "flashinfer": 0.07286400347948074,
+        "sglang_v1": 0.12835200130939484,
+        "sglang_v2": 0.027456000447273254
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 131072,
+      "K": 512,
+      "latency_ms": {
+        "torch.topk": 0.20470400154590607,
+        "flashinfer": 0.06719999760389328,
+        "sglang_v1": 0.12934400141239166,
+        "sglang_v2": 0.03798399865627289
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 131072,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.16223999857902527,
+        "flashinfer": 0.07475200295448303,
+        "sglang_v1": 0.08499199897050858,
+        "sglang_v2": 0.035360001027584076
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 131072,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.143327996134758,
+        "flashinfer": 0.07062400132417679,
+        "sglang_v1": 0.0859839990735054,
+        "sglang_v2": 0.03126399964094162
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 131072,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.14800000190734863,
+        "flashinfer": 0.06515199691057205,
+        "sglang_v1": 0.08489599823951721,
+        "sglang_v2": 0.02848000079393387
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 131072,
+      "K": 1024,
+      "latency_ms": {
+        "torch.topk": 0.20665599405765533,
+        "flashinfer": 0.06400000303983688,
+        "sglang_v1": 0.08240000158548355,
+        "sglang_v2": 0.03888000175356865
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v1": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 1,
+      "L": 131072,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.14051200449466705,
+        "flashinfer": 0.0615679994225502,
+        "sglang_v2": 0.027488000690937042
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 4,
+      "L": 131072,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.15939199924468994,
+        "flashinfer": 0.08240000158548355,
+        "sglang_v2": 0.039712000638246536
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 16,
+      "L": 131072,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.12156800180673599,
+        "flashinfer": 0.037567999213933945,
+        "sglang_v2": 0.023296000435948372
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    },
+    {
+      "B": 64,
+      "L": 131072,
+      "K": 2048,
+      "latency_ms": {
+        "torch.topk": 0.20796799659729004,
+        "flashinfer": 0.05641600117087364,
+        "sglang_v2": 0.040672000497579575
+      },
+      "correct": {
+        "torch.topk": true,
+        "flashinfer": true,
+        "sglang_v2": true
+      },
+      "best": "sglang_v2"
+    }
+  ]
+}

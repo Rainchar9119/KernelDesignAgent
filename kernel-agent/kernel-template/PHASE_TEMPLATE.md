@@ -93,6 +93,9 @@ NaN/Inf 检查**（NaN 比较恒为 false，必须单独查）。
 
 - 每个性能相关提交记进 `benchmark.csv`。
 - 每个候选记进 `solutions.jsonl`，并维护候选间的 parent 链（DAG）。
+- **每轮完整档案落 `rounds/roundNN/`**（snapshot.cuh + meta.yaml + notes.md + build.log + 文本版
+  ncu 摘要；格式见 `rounds/README.md`）；轮次号与 `PROGRESS.md` Round 号严格对齐。`.ncu-rep`
+  二进制与 `profile/` 大产物**不进 `rounds/`**，只留相对路径引用。
 - 每个主要优化方向保留 NCU 剖析记录。
 - 积极评估并使用相关的 {{HARDWARE}} / CUDA {{CUDA_VERSION}} 特性：{{TARGET_FEATURES}}。
 - 用 KernelWiki 做研究：`{{KERNELWIKI_PATH}}`——它是**首选参考、不是唯一来源**。每轮 NCU 出瓶颈后
@@ -174,7 +177,11 @@ baseline 设计优先**。
 和足够的 NCU 证据，据此判断 keep / revise / reject。
 
 **每轮迭代的固定循环**（求依据不是 Phase 1 的一次性动作）：
-`改 kernel → 验正确性 → 计时 → NCU 定位当前主瓶颈 → 为本轮方向找依据 → 应用 → 复测`。
+`改 kernel → 验正确性 → 计时 → NCU 定位当前主瓶颈 → 为本轮方向找依据 → 应用 → 复测 → 存档 rounds/`。
+**执行侧划分（主编排 + 方向级 subagent，见 `CLAUDE.md` 执行模型段）**：前六步
+（改 / 验 / 计时 / NCU / 复测 + 落 `rounds/roundNN/`：snapshot.cuh + meta.yaml + notes.md）在**执行 subagent**
+侧完成，NCU/编译原始噪声全留在 `rounds/` 与 `profile/`，只回蒸馏结果；「找依据」的**战略解释与
+下一步方向决策**在**主 agent**侧完成（据 subagent 蒸馏结果填 PROGRESS「本轮方向依据 / 下一步」）。
 「找依据」这一步：**优先参考 KernelWiki**（`{{KERNELWIKI_PATH}}`）——命中且前提在本 kernel 成立就采纳；
 若 KernelWiki 迁移性差 / 未命中，就**用你自己的经验直接分析 NCU 证据推导方向**（自研分析与命中地位对等，
 不是兜底）。优化会不断改变瓶颈画像（tensor-core 利用率 / atomics 争用 / bank conflict / occupancy /

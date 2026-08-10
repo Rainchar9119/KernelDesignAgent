@@ -4,8 +4,8 @@
 # PROGRESS: fused_q_norm_rope
 
 ## 当前状态
-- 当前 Phase: **Phase 2 Round 4（第 2 优化轮：fp8 向量化转换达标，胜方暂存 dev/ 待 review+promote）**
-- 最好成绩 kernel/baseline 比值: **fp8 0.926（COLD, N4096H64）=1.08× / 0.942（HOT）=1.06×——首次过 1.05× 线；bf16 仍 ≈1.00 中性（未达标）**
+- 当前 Phase: **Phase 2 Round 7 已 review PASS 并 promote 进 candidate。fp8 累计 1.43×；bf16 中性（DRAM 带宽墙，5 杠杆实测无 parity-safe 空间）**
+- 最好成绩 kernel/baseline 比值: **fp8 0.701（COLD, N4096H64）=1.43× / fp8 N1024 COLD 0.774=1.29×。bf16 仍 ≈1.00 中性（DRAM 带宽墙）**
 - 本轮 target speedup: **≥1.05×**（更快，比值<1.0）
 - shape: bf16+fp8 各扫 N∈{17,256,1024,4096}×H∈{17,64}×pos∈{int32,int64}；含 N=17·H=17（total_works=289, %4=1）真正触发尾 warp early-return
 
@@ -193,6 +193,130 @@
   实测流量已近理想），下一轮需从「减少 DRAM 往返」想（如 fp8 那样的减指令对它无效）；或与用户确认 bf16 目标口径
   （plan U2 只保 fp16 sanity，但 bf16 是 AC-4/AC-5 硬目标）。
 
+### Round 5 (Phase 2, 第 3 优化轮) —— fp8 每 warp 2 work-item 摊 load 延迟（dtype 分档），fp8 冲到 1.21×
+> **重要**：R4 已 review PASS，**已 promote 进 candidate**（candidate 现=R4 向量化版）。本轮 R5 改动在
+> `dev/main_norm_rope_r5_gridstride.cuh`，**candidate 尚未含 R5**，待本轮 review 通过再 promote。起点=R4。
+> harness 的 baseline 恒编仓库原文件 `_REPO_CUH`（不可变），比值始终对原始 kernel。
+- 本轮方向依据（先 NCU 具体瓶颈，再解法）：
+  R4 之后重新剖析 fp8 N4096（`profile/dev_r4_veccvt/`）：R4 把发射饱和打掉后瓶颈**转移**——
+  **long_scoreboard 5.59 成第一大 stall**（源级逐行全压在 freq/input load：`:175`/`:155`），
+  **achieved occupancy 仅 53.8%**（reg=32 卡 16 block/SM），memSOL 仅 37%→**latency-bound，非带宽非发射**。
+  逐行证据：`profile/dev_r4_veccvt/reports/source_fp8_n4096.ncu-rep`，`:175` long_scoreboard=1423 独占。
+- 做了什么（parity-safe，不动 RMSNorm fp32 累加顺序/元素→lane 归属/归约树）：
+  **每 warp 处理 kWorkPerWarp 个连续 work-item**，把它们的 input load **全部先发射**再逐个消费——一条 load 的
+  long-scoreboard 延迟被其它 work-item 的计算/访存掩盖（经典 ILP 摊延迟）。**dtype 分档**（沿用本文件
+  `kMaxVecSize=16/sizeof(DType)`、R4 `kVecConvert=sizeof(DType)==1` 同款 `if constexpr` 惯例，一处 constexpr）：
+  `kWorkPerWarp = (sizeof(DType)==1) ? 2 : 1`——**fp8=2**（latency-bound、kLocalSize=1 寄存器余量大，摊延迟净赢）、
+  **bf16=1**（DRAM 带宽 bound、kLocalSize=2 寄存器翻倍会压垮 occ；实测 2-work 时 bf16 慢 20%，故保持 1）。
+  launcher 的 `num_blocks` 用**同一个** constexpr `kWorkPerWarp` 计（`div_ceil(total_works, kFusedQNumWarps*kWorkPerWarp)`），
+  编译期一致。每 (token,head) 的 lane→元素映射、freq、fp32 累加序与单-work 完全相同 → 逐位 parity 保。
+  收尾零风险优化：part2 后的 `__syncwarp` 改 `if (w+1<n_work)`——bf16(1 work)时该 fence 死代码消除，
+  **bf16 codegen 与单-work 路径逐字节等价**，分档不给 bf16 引入任何开销。奇数 H（如 17）时一个 warp 的 2 个 work-item
+  可能跨 token → 各自按自己的 batch_id/position 独立算，用 **N17·H17** 档专验（parity=0 通过）。
+- 正确性检查（两 dtype）：`python harness.py --dtype all --pos-dtype both --candidate dev/main_norm_rope_r5_gridstride.cuh`
+  **全 32 档 correctness=PASS**（逐位 parity 全 0、golden 全 True、guard 0 脏）。含 N17·H17（%4=1、且 2-work 跨 token）。
+- 性能输出（HOT/COLD 中位数 vs baseline，dtype 分档后）：
+  - **fp8 N4096H64：HOT 0.842 / COLD 0.826（=1.21×）**；fp8 N1024：HOT 0.914 / COLD 0.850（=1.18×）。**远超 1.05×**。
+  - bf16 N4096：HOT 1.000 / COLD ~1.024；N1024 HOT 1.001 / COLD 1.000——**与 R4 持平（中性）**，分档确保未回退。
+- ncu 关键证据（本轮主瓶颈类别）：R4→R5 fp8 N4096 待本轮 review 后补最终 NCU（预期 long_scoreboard 下降、occ/ILP 上升）；
+  本轮解法直接针对 R4 后实测的 **long_scoreboard 5.59 / occ 53.8%** 这两项 latency-bound 指标，1.21× 的墙钟改善与「摊 load 延迟」机制一致。
+- 本轮方向依据的 KernelWiki 回查（≥2 路径，每页写前提成立性）：
+  瓶颈锚点：fp8 long_scoreboard 5.59（第一）、achieved occ 53.8%、memSOL 37%（latency-bound）。检索：
+  ① `query.py "latency bound low occupancy overlap global load ILP multiple items per warp hide long scoreboard"`；
+  ② `grep_wiki.py "occupancy|latency|ILP|prefetch|persistent|grid-stride" --any --only wiki`。
+  - `techniques/persistent-kernels.md`：手法=一个 CTA/warp 处理多 tile（CLC/grid-stride）摊调度与延迟。
+    **前提本轮对 fp8 成立**——占用低(54%)、waves 足够但单 warp 只 1 work 无法藏 load 延迟；给它多 work 增 ILP 正是此页思想的
+    warp 级落地 → **采纳其"一执行体多 work 摊延迟"内核，落成 kWorkPerWarp**。（注：本 kernel 是 warp-per-work，不做 CLC 硬件调度，
+    只借 grid-stride/多-work 的 ILP 摊延迟部分。）
+  - `techniques/vectorized-loads.md`（复用上轮）：`-maxrregcount`/occupancy 段——**对 fp8 前提成立**（reg=32 卡 16 block），
+    但本轮用"每 warp 多 work"增 ILP 而非抬 occ 来藏延迟（占用低但 waves 足时，ILP 比纯抬 occ 更直接）→ 采纳 ILP 路线，maxrregcount 暂缓。
+  未命中「fp8 RMSNorm warp-per-head 摊 load 延迟的 SM100 专页」；走 2 路径。
+- 待 review：**是**（Phase 2 优化轮必停）。请 reviewer：① 复现 fp8 COLD≈0.826（<0.952 大幅过线）与全 32 档 parity=0（尤其
+  **N17·H17 的 2-work 跨 token** 档，这是本轮 parity 命门）；② 核 kWorkPerWarp 分档是否 arithmetic-neutral（每 work-item
+  独立算、累加序未变、freq 按各自 position）、launcher num_blocks 与 in-kernel 一致；③ 确认 bf16 走 1-work 路径、与 R4 持平未回退；
+  ④ candidate 现=R4（本轮 R5 未 promote，在 dev/）。
+- 下一步：本轮 review 通过后 promote R5。fp8 已 1.21× 大幅达标；bf16 仍中性（DRAM 带宽墙，用户已定"先冲 fp8"）。
+  后续可选：fp8 试 kWorkPerWarp=3/4 找拐点；或收尾（fp8 已远超目标）。
+
+### Round 6 (Phase 2, 第 4 优化轮) —— s_rope padding，fp8 冲到 1.29×（含否决 2 个子方向；胜方在 dev/ 待 review）
+> R5 已 review PASS 并 promote，candidate 现=R5（1.21×）。本轮胜方在 `dev/main_norm_rope_r6_swizzle.cuh`，candidate 未含 R6。
+> 用户指令："不要把 1.05× 当目标，性能越高越好，先冲 fp8"。
+- 本轮试了 3 个 fp8 子方向（起点=R5）：
+  1. **kWorkPerWarp 拐点扫描（否决）**：扫 W∈{3,4,6,8}，fp8 N4096 COLD = 0.851/0.900/1.097/1.198 —— 全比 W=2 的
+     0.826 差。W>2 寄存器压力反噬。**结论：W=2 是拐点，保持。**
+  2. **消除运行时整数除法（否决）**：把 `clamped/num_q_heads` 换成连续 work-item 的 head_id 增量推导。正确性全绿，
+     但 fp8 N4096 COLD 0.826→**0.901（更慢）**。根因：增量引入循环携带依赖，破坏了 `#pragma unroll` 下多 work-item
+     地址的并行计算；且编译器对 `/常量` 本已用乘-移位，原除法的 not_selected 是发射饱和共性、非除法专属（我起初的
+     归因是误判，benchmark 纠正）。**已丢弃。**
+  3. **s_rope padding（采纳，胜方）**：fp8 的 part2 是 32 lane 各读 1 个 `fp8x2`(2B)——两 lane 共享 1 个 4B SMEM
+     bank。把每个 pair padding 进独立的 4B slot（`s_rope_pad[warp][32]` uint32）。**仅 fp8 生效**（`if constexpr kVecConvert`），
+     bf16 pair 本是 4B 无冲突、走原 s_rope 路径。存/读的 bit 完全不变（低 16 位是原 fp8x2）→ parity-safe。
+- 正确性检查（两 dtype）：`--dtype all --pos-dtype both` **全 32 档 correctness=PASS**（逐位 parity 全 0、golden 全 True
+  max=0、guard 0 脏）。含 N17·H17（%4=1 且 2-work 跨 token）。整理代码（去重 mem_elem 声明）后回归仍全绿。
+- 性能输出：**fp8 N4096H64 COLD 0.776（=1.29×）**（复测 0.776/0.776/0.778 稳定）；fp8 N1024 COLD 0.886（=1.13×）。
+  bf16 走原路径中性未回退。
+- ncu 关键证据（本轮主瓶颈类别 + 诚实存疑）：R5→R6 fp8 N4096：dur **69.2→65.0us**、smSOL 69.7→72.6、occ 86.4→88.4。
+  **⚠ 机制存疑（如实标注，不含糊）**：我原假设"padding 消除 bank conflict"，但 NCU 实测 bank_conflict(ld)
+  **20828→39013（不降反升）**，**假设被自己的 NCU 数据否定**。墙钟加速真实且稳定复现、正确性全绿，但"为何快"当前
+  **无法用 NCU 证据坐实**（可能来自 padding 后 32-lane×4B 的规整单事务 / wavefront 数变化，未证实）。本轮把此列为
+  **待查**，请 reviewer 独立复核该加速是否真实（而非计时假象），机制解释不作为采纳理由——采纳依据是「可复现墙钟 + parity 全绿」。
+- 本轮方向依据的 KernelWiki 回查（≥2 路径，每页写前提成立性）：
+  瓶颈锚点：R5 后 fp8 s_rope 读 262144 shared-ld + 固有 sub-word bank 共享（32 lane×2B 落 16 bank）。检索：
+  ① `query.py "shared memory bank conflict swizzle sub-word 2-byte transpose padding SM100"`；
+  ② `grep_wiki.py "bank conflict|swizzle|padding|smem" --any --only wiki`。
+  - `techniques/swizzling.md`：手法=128B swizzle / XOR 重排消 bank conflict（GEMM 无 swizzle 掉到 46%）。
+    **前提部分成立/部分不成立**：本 kernel 的冲突是 sub-word（2B<4B bank）固有共享，**XOR 重排 2B 消不掉**（我验证过），
+    但**padding 到 4B slot 能改变物理占用宽度**→ 采纳"padding 对齐 bank"这一变体（非页里的 XOR 手法）。
+    诚实补充：实测 bank_conflict 反升，故本页手法的「消 conflict」前提在结果上**未被证实**——采纳基于墙钟实证而非该页机制。
+  - `patterns/memory-bound.md`（复用）：fp8 已非带宽 bound（memSOL 47%），此页对 fp8 不成立，仅作排除。
+  未命中「fp8 sub-word rope 转置 SMEM 布局的 SM100 专页」；走 2 路径。
+- 待 review（**正确性从严**，用户明确要求"正确性一定不能放松"）：请 reviewer：① 全 32 档复现 parity=0，**尤其
+  N17·H17 跨 token** + padding 读写的低 16 位是否确与原 fp8x2 逐位一致（`s_rope_pad` 高 16 位是 padding、不得污染输出）；
+  ② 独立复现 fp8 COLD≈0.776 判断加速真实非计时假象；③ 机制存疑项据实核（不因"讲不清为何快"放过正确性，但也不因机制存疑否掉可复现的真实加速）；
+  ④ 确认 kWorkPerWarp 扫描/消除除法两个否决有 benchmark 证据、bf16 走原路径未回退、candidate 现=R5 未偷 promote。
+- 下一步：review 通过后 promote R6。fp8 累计 1.29×（R3 st.cs→R4 向量化→R5 多-work→R6 padding）。
+  可继续挖 fp8（block-per-token 消 freq 冗余，结构大改）或收官。
+
+### Round 7 (Phase 2, 第 5 优化轮) —— fp8 block-per-token freq 共享，1.29×→1.43×（胜方在 dev/ 待 review）
+> R6 已 review PASS 并 promote，candidate 现=R6（1.29×）。本轮胜方在 `dev/main_norm_rope_r7_blockpertoken.cuh`
+> （由 kernel-optimization-engineer 子 agent 实现，主 agent 已独立复现验证），**candidate 未含 R7**，待 review 通过再 promote。
+> harness baseline 恒编仓库原文件 `_REPO_CUH`（不可变）。**用户指令："性能越高越好，先冲 fp8"、"正确性一定不能放松"**。
+> **附：本轮同时完成 bf16 的第二次系统探索（另起）+ case 网格全量验证（另起）——见「待办/阻塞」的 bf16 收口 与 case 验证段。**
+- 本轮方向依据（先 NCU 具体瓶颈，再解法）：
+  R6 后 fp8 逐行 stall 显示 **freq load（`freqs_cis+position*64`）是 long_scoreboard 热点**，且被**同一 token 的 H 个
+  head 各自冗余 gather**——R6 发了 262144 次 freq LDG（占 L2 流量 11.7%）。同 token 的所有 head 共享同一 position→同一行 freq。
+- 做了什么（**仅 fp8**，`if constexpr kVecConvert`；bf16 走 R6 原 warp-per-work 分支，逐字节不变）：
+  block-per-token dispatch——一个 block 钉在 **1 个 token**、覆盖至多 8 个连续 head（=kFusedQNumWarps×kWorkPerWarp，
+  与 R6 中「4 warp×2-work」覆盖的正是同 8 个 head）。该 token 的 256B freq 行由 **warp 0 一次性 load 进 `__shared__ s_freq[32]`**，
+  经 1 次 `__syncthreads` 后全 head 复用。grid = batch_size×ceil(H/8)。freq LDG 262144→32768（**8×**）。
+  **parity 保**：freq 是 fp32 精确值，从 SMEM 取**同一个值**是 bit-neutral → RMSNorm fp32 累加序/lane→元素映射/归约树/
+  每 work-item 的 norm 数学与 R6 逐字节相同；只改「block↔token 绑定 + freq 来源」。
+- 正确性检查（主 agent 独立复现，未信子 agent 自报）：`--dtype all --pos-dtype both --num-tokens 17 --num-q-heads 17`
+  三支柱全绿——**逐位 parity=0、golden allclose True（max=0.000e+00）、guard 0 脏**，含**命门 N17·H17（%4=1、跨 token/尾）
+  双 pos**。子 agent 亦报全 32 档（N∈{17,256,1024,4096}×H∈{17,64}×双pos）correctness=PASS。
+- 性能输出（主 agent 复现，非自报）：**fp8 N4096H64 COLD 0.7015（=1.43×）**（子 agent 3 次 0.7011/0.7014/0.7015 稳定）；
+  fp8 N1024 COLD 0.774、N256 0.850、N4096·H17(奇) 0.883。**bf16 中性**：R7 与 R6 同机对照 COLD 均在 1.00~1.02 抖动区、
+  HOT 都 1.003，**R7 未比 R6 差**（bf16 走 R6 原路径，那 2% 是 CUDA-event COLD 抖动非回退）。
+- ncu 关键证据（本轮主瓶颈类别）：`profile/dev_r7_blockpertoken/`：fp8 N4096 dur **64960→54560ns**、
+  L2 sectors 17.8M→15.4M（freq 复用坐实）、not_selected stall 1415→971、occ 88→87%。**dram_read 不变（~135MB，freq 本就
+  L2-resident 所以 DRAM 没降）——收益来自「更少 LDG 指令 + 更少 L2 流量」缓解 issue 饱和，非 DRAM**。新增 barrier stall
+  325（来自 `__syncthreads`）但净收益大。
+- 本轮方向依据的 KernelWiki 回查（≥2 路径，每页写前提成立性）：
+  瓶颈锚点：fp8 freq LDG 冗余（262144 次 = L2 流量 11.7%）+ long_scoreboard/issue 饱和。检索：
+  ① `query.py "block per token shared freq reuse across heads reduce redundant global load broadcast SMEM"`；
+  ② `grep_wiki.py "broadcast|shared|reuse|__syncthreads|block per" --any --only wiki`。
+  - `patterns/memory-bound.md`「poor data reuse: each element used only once」的反面——本轮正是**发现了可复用数据**
+    （per-token freq 被 H head 共享），用 SMEM 广播消冗余。前提成立（fp8 有 freq 冗余可挖）→ 采纳「SMEM 广播复用」思路。
+  - 同文件 K-kernel（`fused_k_norm_rope_flashmla`）本就是 block-per-token 结构——**已有仓库内先例**，借鉴其 dispatch/shared
+    写法（前提完全成立，同族算子同款布局）→ 采纳。
+  未命中「fp8 Q norm block-per-token freq 共享保 parity 的 SM100 专页」；走 2 路径 + 仓库内 K-kernel 先例。
+- 待 review（**正确性从严**）：请 reviewer：① 全 32 档复现 parity=0，**尤其 N17·H17 跨 token/尾 warp** 双 pos，
+  以及 **H 非 8 整数倍**时（如 H=17、H=64）block 覆盖 <8 head 的边界（ceil(H/8) 的余数 block 是否只写 in-range head、
+  不越界读 freq/写 output）；② 核 freq 共享是否 arithmetic-neutral（SMEM 取同一 fp32 值、每 work-item norm 逐字节同 R6）；
+  ③ 确认 bf16 走 R6 原分支未回退、candidate 现=R6 未偷 promote（md5 校验）；④ 复现 fp8 COLD≈0.70 判断加速真实非计时假象；
+  ⑤ AC-6 抽查 memory-bound 页 / K-kernel 先例留证。
+- 下一步：review 通过后 promote R7。fp8 累计 **1.43×**（R3→R4→R5→R6→R7）。bf16 见下 bf16 收口结论。
+
 ## 待办 / 阻塞
 - **B1 已解决（fp8 编译墙，用户拍板方案 a）**：新增 `fused_q_norm_rope/fp8x2_patch.cuh`——header-only 补丁，
   为本仓库 `type.cuh` 漏登记的 `fp8x2_e4m3_t` 补 `dtype_trait<fp8x2_e4m3_t>::from()`（走 `static_cast`，
@@ -204,10 +328,26 @@
   （原始 baseline 文件在本仓库头文件下同样编不过）。
 - **T1 已解决**：sweep/​smoke 的 head_shapes 加入 **H=17**，配 N=17 得 total_works=289（%4=1），block 尾部
   warp 真正走 early-return，AC-3 未写脏 negative 场景已实测覆盖（guard 0 脏字节）。
-- **待决 U1**：fp8_e4m3 golden 容差 1e-1——实测 max abs 误差在 0~1.25e-1 间，H=64·N∈{256,4096} 档出现
-  1.25e-1（恰 <1e-1？否：1.25e-1 > 1e-1，但该档 allclose 仍 True 因 rtol 分量吃掉了——需 Phase 1 据实收紧/确认，
-  **注意别放宽到失去意义**）。留待 reviewer / Phase 1 标定。
+- **待决 U1（已据实标定，2026-08-10 case 网格验证更新）**：fp8_e4m3 golden max abs 误差**随 magnitude 增大而增大**，
+  上界比 Phase 0 所见更高——Phase 0 仅在 H=64·N∈{256,4096} 见 1.25e-1；后续全网格（H∈{8,16,32,64}×N∈{1..16384}）
+  在 **N=16384·H=64 见 2.5e-1**（magnitude≈2 处单 ULP=2^-3·2=0.25）。**判定：非 candidate 引入、非 reward hacking、
+  容差无需改**——理由：① baseline 与 candidate 报**同一个** max 值、二者 allclose 均 True（rtol·|b| 相对分量吸收，
+  对量化类型是正确误差模型）；② 逐位 parity=0 才是硬锚点，candidate 与原 kernel 逐字节相同；golden 在此仅校验
+  「纯 PyTorch 参考 vs 真 kernel」的单-ULP 舍入分歧（e4m3 尾数 3 bit），不是 candidate 正确性闸门。**结论：这是 fp8
+  golden↔kernel 的固有单-ULP 特征,上界随 magnitude 线性放大(1e-1@mag1 → 2.5e-1@mag2),属预期;容差 1e-1 保持不变
+  (rtol 分量已正确处理),不放宽也不误判为 candidate 错误。**
 - **待决 U2（plan 既列）**：fp16 默认仅 sanity，不作 AC-4 计时目标。
+- **bf16 收口结论（2026-08-10，两次系统探索后定论）**：bf16 是**纯 DRAM 带宽 bound**，在「保逐位 parity + 不改 I/O
+  dtype 契约」约束下**无 parity-safe 优化空间**——已实测/定量排除 **5 个杠杆**：① 读侧 `__ldcs` streaming（慢 4-5%，否决）；
+  ② 向量化 dequant（无益，bf16 非 issue-bound）；③ `__launch_bounds__` 16→8（中性）；④ block 128→256（中性）；
+  ⑤ block-per-token 消 freq 冗余（定量：freq 冗余读已全被 L2 吸收，实测总 DRAM 486MB<537MB 理想，对 bf16 省不出带宽）。
+  证据：memSOL 77.5%=峰值 77%、long_scoreboard 18.2 独占（等 DRAM）、load 已合并（sector/req 近最优）、store 32/32 满、
+  occupancy warp 顶格（16 block=64 warp/SM，达成 80%，剩余是 wave 量化尾波 <4%）。**要突破只剩破护栏的路**（改归约序换 ILP=破
+  parity；输出降精度/压缩=改契约，非同一算子），均超范围。→ **bf16 交付 = 已证触及硬件带宽墙、访存近最优、无 parity-safe 空间**。
+- **case 网格全量验证（2026-08-10，独立子 agent，只读）**：对 R6 candidate 扫 **H∈{8,16,32,64}(TP=8/4/2/1)×N∈{1..16384}×
+  双dtype×双pos = 112 档 + 9 组尾 warp（%4≠0）补充**，**正确性零异常**（三支柱全绿、parity 处处=0，含奇 H fp8 跨 token）。
+  fp8 加速在所有 TP 档成立且随 N 增强（H=64·N=16384 到 1.32×，小 N 是欠填 ratio≈1 非回退）；bf16 全档中性无回退。
+  原始数据 `profile/case_grid_validation/`（correctness_raw.txt 等）。**该验证针对 R6；R7 promote 后建议对 R7 重扫一遍全网格。**
 
 ## REVIEW（独立审查者追加，被审方勿改此段）
 
@@ -330,3 +470,138 @@
 **独立判断（本轮 fp8 是否真达标 + bf16 标注是否诚实）**：**fp8 真达标**——COLD 0.9256（1.08×）、HOT 0.9390（1.065×）均 <0.952，且逐位 parity 32/32=0 未破，向量化是 arithmetic-neutral 的合法优化（非放水换来）。**bf16 未达标属实**：bf16 是纯 DRAM 带宽 bound（memSOL 77.4%，向量转换对它无益且略扰 streaming，我复现 COLD 1.0248 反略慢），被审方主动、如实标注中性未达标，诚实。关于「AC-4 是否要求两 dtype 都 ≥1.05×」：plan AC-4 Positive 措辞为「至少代表 workload 集上比值<1.0」，未逐字要求每个 dtype 都过 1.05×；但任务一句话与 AC-5 明确 bf16+fp8 双主攻，**正确性两 dtype 均已 PASS**（护栏满足），**性能上 fp8 已过、bf16 仍未过是当前实情**——本轮作为单轮迭代是又对又诚实地达标推进（fp8 首次破线、parity 未破、candidate 未偷 promote），判 **PASS**；但**整体任务收官仍需处理 bf16 达标或与用户确认 bf16 性能口径**（这是下一步事项，非本轮 ISSUE）。
 
 **一句话**：dev/ 向量化仅走 fp8、bf16 保留标量，sum-of-squares 累加序与标量逐元素一致 + packed cvt 同 round → arithmetic-neutral，全 32 档 correctness=PASS 逐位 parity 32/32=0；fp8 N4096 COLD 0.9256（1.08×）复现命中报告、首次过 1.05×，NCU not_selected 6.24→2.40 等前后对比逐条属实，candidate 仍是 Round 3 的 st.cs（本轮未偷 promote），bf16 未达标如实标注，AC-6 抽查 cache-policy/vectorized-loads 两页留证属实——**PASS**（提示：整体任务收官需另行处理 bf16 性能）。
+
+### [Round 5 / Phase 2 第 3 优化轮 review] 2026-08-06 — 独立审查者
+
+- **审查目标**：`kernel-agent/kernels/fused_q_norm_rope/`（Round 5 = fp8 每 warp 2 work-item 摊 load 延迟 + dtype 分档 `kWorkPerWarp=(sizeof(DType)==1)?2:1`；改动在 `dev/main_norm_rope_r5_gridstride.cuh`，candidate 尚未含 R5）
+- **裁决**：**PASS**
+
+**candidate 未偷 promote 核实：正确**。`diff candidate/main_norm_rope.cuh dev/main_norm_rope_r4_veccvt.cuh` = IDENTICAL；两者 md5 均 `7a46a689cd6b9f199ad720c399dd0261`。R5 只在 `dev/main_norm_rope_r5_gridstride.cuh`（md5 `d7123f73...`），candidate 现=R4 向量化版，本轮未 promote 属实。harness baseline 恒编仓库原文件 `_REPO_CUH`（`baidu/wenxin/sglang/.../deepseek_v4/main_norm_rope.cuh`，上游 git status 干净、未改；上游仅 `fused_norm_rope_v2.cuh` 有改动=另一姊妹 kernel，与本 kernel 无关）——比值恒对原始 kernel。
+
+**parity 保序核实（本轮命门）：成立**。逐段核 `diff R4 R5`：kWorkPerWarp 只改「一个 warp owns 几个 work-item + 把 load 全部先发射（`input_vec[kWorkPerWarp][kLocalSize]`）」，**每个 work-item 内部算术逐字节保留**——sum_of_squares 每 work-item 重置为 0（L184）、fp8 按 pair p→元素 2p,2p+1 累加（L191-195）、bf16 按 j=0..15（L201-204），`warp::reduce_sum` 每 work-item 独立（L207）、`rsqrt(sum/512+eps)`、lane→元素映射 `tile::Memory<Storage>{lane_id,kWarpThreads}` 与单-work 完全相同。fp32 非结合累加顺序、归约树、元素→lane 归属全未动 → 逐位 parity 保。
+
+**跨 token 正确性核实（奇数 H，kWorkPerWarp=2）：成立**。L161-175 对每个 w 用**各自的** `work_id=work_base+w` 独立算 batch_id/head_id → 各自 `in_ptr/out_ptr[w]/position[w]/freq`（L182 `freqs_cis+position[w]*kRopeDim`）。H=17 时一 warp 2 个 work-item 跨 token 各按自己 position 旋转、写自己的 out_ptr。越界安全：load 段用 `clamped=(work_id<total_works)?work_id:total_works-1`（越界读夹到末个有效元素=**不越界读**，只是冗余 load 供 ILP），消费段 `if(w>=n_work) break`（L180）越界 work-item 不进算/不写 → **不越界写**。N17·H17（works=289,%4=1,2-work 跨 token）实测 parity=0 佐证。
+
+**dtype 分档 & launcher 一致：成立**。in-kernel（L130）与 launcher（L319）都用**同一** constexpr `kWorkPerWarp=(sizeof(DType)==1)?2u:1u`，launcher `num_blocks=div_ceil(total_works, kFusedQNumWarps*kWorkPerWarp)`（L320）。bf16=1 时 `if(w+1<n_work)__syncwarp()`（L258）恒 false（n_work≤1）→ fence 死代码消除，for w<1 单迭代 → codegen 回到单-work；实测 bf16 中性未回退佐证。
+
+**我复现的正确性**（`harness.py --no-timing --dtype all --pos-dtype both --candidate dev/main_norm_rope_r5_gridstride.cuh`，未信自报）：**correctness=PASS 全 32 档**；逐位 parity `mismatch=0` 32/32；golden 全 True（bf16 ≤3.125e-2、fp8 ≤1.25e-1 单 ULP 边缘、其余更小）、NaN/Inf=0；guard 未写脏全 0。**N17·H17 四档（bf16/fp8 × int32/int64）全 parity=0、guard 0 脏**——本轮 parity 命门（%4=1 且 2-work 跨 token）通过。
+
+**我复现的性能**（HOT/COLD 中位数 vs baseline，与报告对比）：
+| 档 | 我复现 | 报告 |
+|---|---|---|
+| fp8 N4096H64 COLD | **0.8261**（82.624/68.256us）=1.21× | 0.826 ✓ |
+| fp8 N4096H64 HOT | 0.8461（81.088/68.608）=1.18× | 0.842 ✓ |
+| fp8 N1024H64 COLD/HOT | 0.8499 / 0.9196 | 0.850 / 0.914 ✓ |
+| bf16 N4096H64 HOT/COLD | 1.0004 / 1.0000（中性）| ~1.00 / ~1.024 ✓ |
+fp8 COLD 0.826 ≪ 0.952 → **大幅过 1.05×（1.21×）**，命中报告；bf16 分档=1 确保中性未回退，如实。计时公平（baseline/candidate 同 `lineinfo=False`，baseline 编 `_REPO_CUH`）。
+
+**AC-6 / 本轮方向依据合规（含抽查页 + NCU 复核）：合格**。字段先写本轮**具体**瓶颈（fp8 long_scoreboard **5.59** 第一、achieved occ **53.8%**、memSOL 37% → latency-bound）再给解法，2 检索路径。**NCU 复核**（从留存 `profile/dev_r4_veccvt/reports/full_fp8_n4096.ncu-rep`，nsight-compute 2026.1.0 ncu_report py 读末次 action）：achieved occ **53.76%**、long_scoreboard **5.591**（>not_selected 2.40、>math_throttle 1.04，确为第一大 stall）、memSOL **37.4%**、dur 74304ns——与字段所报**逐条命中**，latency-bound 诊断真实。**抽查 `technique-persistent-kernels` 实机打开**：页面确有「persistent/多-tile 一个执行体处理多个 work in a loop」内核（CLC 循环 + Hopper 静态 stride「CTA i 处理 tile i,i+stride…」），被审方「借其『一执行体多 work』内核落成 kWorkPerWarp、但只取 grid-stride/多-work 的 ILP 摊延迟部分、不做 CLC 硬件调度」**与页面相符、并诚实标注 warp-per-work 非 CLC**（非曲解/非空话）。（提示非 ISSUE：该页主旨偏 GEMM 尾波/L2 locality，被审方把它迁到 warp 级 ILP 摊延迟属合理迁移，因果链另由自测 NCU long_scoreboard/occ 支撑，站得住。）
+
+**reward hacking 三类：均未发现**。① baseline 未换/削弱（harness 恒编 `_REPO_CUH` 仓库原文件，上游 git 干净；candidate=R4 非 R5）；② 判据未放水（`_TOL` bf16 2e-2 / fp8 1e-1 写死、parity 0 mismatch、golden NaN/Inf 独立 raise、guard 4096 逐字节四检查齐全，harness/fp8x2_patch 本轮未改）；③ 性能未夸大（fp8 COLD 0.826 复现命中 1.21×，bf16 中性/未达标如实报，未只挑利好 shape）；④ 无外包（harness 本目录自跑、NCU 从留存 .ncu-rep 复现）。
+
+**独立判断**：本轮 fp8 **真达标且大幅前进**——COLD 1.21×/HOT 1.18×，逐位 parity 32/32=0 未破（含 N17H17 跨 token 命门），kWorkPerWarp 是 arithmetic-neutral 的调度/ILP 改动（work-item 内部算术逐字节未动，非放水）。dtype 分档让 bf16 走 1-work 路径（fence 死代码消除）→ 与 R4 持平未回退，被审方对 bf16 仍中性的标注诚实。**PASS**。整体收官仍需另行处理 bf16 达标或与用户确认 bf16 性能口径（下一步事项，非本轮 ISSUE）。
+
+**一句话**：R5 kWorkPerWarp 只改「一 warp owns 几 work-item + load 先发射」，每 work-item 内部累加序/归约树/lane 映射逐字节未动 → parity-safe；全 32 档 correctness=PASS 逐位 parity 32/32=0（含 N17H17 跨 token 命门），fp8 N4096 COLD 0.826（1.21×）复现命中、大幅过线，bf16 分档=1 中性未回退且如实标注，candidate 仍=R4 未偷 promote，baseline 恒编仓库原文件，AC-6 瓶颈锚点（long_scoreboard 5.59/occ 53.8%）我从留存 .ncu-rep 复现逐条吻合、抽查 persistent-kernels 页留证属实——**PASS**。
+
+### [Round 6 / Phase 2 第 4 优化轮 review] 2026-08-06 — 独立审查者
+
+- **审查目标**：`kernel-agent/kernels/fused_q_norm_rope/`（Round 6 = fp8 s_rope padding：把每个 fp8x2 pair padding 进独立 4B slot `s_rope_pad[warp][32]`，仅 fp8 走 `if constexpr kVecConvert` 分支，bf16 保留原 s_rope；含 2 个否决子方向。胜方在 `dev/main_norm_rope_r6_swizzle.cuh`，candidate 未含 R6）
+- **裁决**：**PASS**
+
+**candidate 未偷 promote 核实：正确**。`diff candidate/main_norm_rope.cuh dev/main_norm_rope_r5_gridstride.cuh` = IDENTICAL，md5 均 `d7123f7345fd6e63625c894f8325ff44`——candidate 现=R5（R6 未偷 promote，属实）。R6 只在 `dev/main_norm_rope_r6_swizzle.cuh`（md5 `77d7716452074e1756f56a3ae1baa42f`）。harness baseline 恒编仓库原文件 `_REPO_CUH`（`baidu/wenxin/sglang/.../deepseek_v4/main_norm_rope.cuh`，`git status` 该文件干净未改；上游仅 `fused_norm_rope_v2.cuh`=另一姊妹 kernel 有改动，与本 kernel 无关）→ 比值恒对原始 kernel。只在本目录写、未改上游。
+
+**改动定位 + padding 读写逐位核对（本轮最关键，正确性从严）：parity-safe 成立**。`diff R5 R6` 仅 4 处、全在 s_rope staging：(a) 新增 `__shared__ uint32_t s_rope_pad[kFusedQNumWarps][kVecConvert?32:1]`（L150）；(b) 写入分支 L243-254；(c) 读回分支 L265-272；(d) 注释。**累加/归一化段（sum_of_squares fp32 累加 pair p→元素 2p,2p+1、`warp::reduce_sum`、rsqrt、`dequant2/quant2`）逐字节与 R5 相同**（`diff` 该段 = ACCUMULATION IDENTICAL），RMSNorm fp32 累加序/归约树/lane→元素映射未动。
+- **低 16 位核对**：fp8 kVecSize=16→每 rope lane 8 个 fp8x2 pair、kRopeSize=64/16=4、rope lane=28..31→rope_id 0..3。**写**：`s_rope_pad[warp][rope_id*8+p] = (uint32)(*(uint16*)&pr[p])`——低 16 位=原 fp8x2(2B)、高 16 位=0（padding）；slot 映射 rope_id0→0..7 / 1→8..15 / 2→16..23 / 3→24..31，恰好铺满 0..31 共 32 slot。**读**：lane L 读 `raw=(uint16)s_rope_pad[warp][L]`（**显式截低 16 位、高位 padding 不进 elem**）→ `elem=*(DType2*)&raw`。R5 原路径是 `tile::Memory<DType2>.load(s_rope)`= `s_rope_ptr[lane_id]`（第 lane_id 个 fp8x2）。两版 (lane→slot→输出元素) 映射**逐元素一致**（lane L 都取回第 L 个 pair），仅物理布局从 packed 2B 改 padded 4B、存读 bit 不变 → parity-safe。写读索引均在界内（max 31<32），32 slot 全写满后 `__syncwarp` 才读。
+- fp8 走 padding 分支 / bf16 走原 s_rope 分支由 `if constexpr kVecConvert=(sizeof(DType)==1)` 编译期分流，bf16 codegen 不含 s_rope_pad（数组维度=1）→ bf16 路径未动。
+
+**我复现的正确性**（`harness.py --no-timing --dtype all --pos-dtype both --candidate dev/main_norm_rope_r6_swizzle.cuh`，未信自报）：**correctness=PASS 全 32 档**；逐位 parity `mismatch=0` **32/32**；golden 全 True（fp8 max ≤1.25e-1 单 ULP 边缘、其余 0~1.95e-3）、NaN/Inf=0；guard 未写脏全 0。**N17·H17 四档（bf16/fp8 × int32/int64，%4=1 且 2-work 跨 token）全 parity=0、guard 0 脏**——本轮 parity 命门通过。
+
+**我复现的性能**（vs baseline=repo 原文件，同 `lineinfo=False` flag）：
+| 档 | 我复现 | 报告 |
+|---|---|---|
+| fp8 N4096H64 COLD | **0.7889 / 0.7882**（≈1.27×，两次复测稳定）| 0.776 ✓（同量级，稳定过线）|
+| fp8 N4096H64 HOT | 0.7892 / 0.7917 | 0.776~ ✓ |
+| bf16 N4096H64 HOT/COLD | 1.0090 / 1.0123（中性）| ~1.00 中性 ✓ |
+fp8 COLD ≈0.789 ≪ 0.952 → **大幅过 1.05×（≈1.27×）**，与报告 0.776 同量级、稳定复现（我机器上 baseline 82~84us 略有波动，比值稳定 0.78~0.79）；bf16 走原路径中性未回退，如实。
+
+**加速真实性判断：真实，非计时假象**。① baseline 编 `_REPO_CUH` 仓库原文件（git 干净、未削弱），candidate 与 baseline **同 flag**（harness `_load_baseline_module`/`_load_candidate_module` 默认 `lineinfo=False`）；② 两次独立复测 COLD 0.7889/0.7882 一致，非单次噪声；③ 不是只报利好档（bf16 中性、两个否决均如实）。加速真实。
+
+**「机制存疑」项独立核（正确性从严但不因讲不清机制否掉真实加速）**：被审方诚实标注「原假设 padding 消 bank conflict，但 NCU 实测 bank_conflict(ld) 反升」。我从留存 `profile/dev_r6_swizzle/reports/full_fp8_n4096.ncu-rep`（ncu_report py，`/opt/nvidia/nsight-compute/2026.1.0/extras/python`）复现：dur **64960ns**、occ **88.36%**、smSOL **72.64%**、memSOL 47.3%、**bank_conflict(ld) 39013 / (st) 39121**——与被审方「20828→39013 不降反升」的方向一致（值本身量级吻合），**其诚实标注属实、未粉饰**。机制虽未坐实，但加速真实 + parity 全绿 → 按裁判规则**不构成 ISSUE**（仅 OPTIONAL：后续可查 wavefront/事务规整假说）。
+
+**AC-6 / 本轮方向依据合规（含抽查页核对）：合格**。字段先写本轮瓶颈（R5 后 fp8 s_rope sub-word 2B<4B bank 共享），2 检索路径。**抽查 `techniques/swizzling` 实机打开**：页面确为 128B XOR swizzle（`byte_offset ^ ((row&0x7)<<4)`）消 bank conflict、面向 TMA/tcgen05 MMA operands（无 swizzle 掉到 46% 峰值）。被审方那句「本 kernel 冲突是 sub-word（2B<4B bank）固有共享，XOR 重排 2B 消不掉，采纳 padding 到 4B slot 这一**变体**（非页里 XOR 手法）；且诚实补充实测 bank_conflict 反升、页里『消 conflict』前提在结果上未被证实、采纳基于墙钟实证」——**与页面内容 + 它自己的 NCU 数据一致**（页面确是 XOR swizzle 非 padding、确面向宽 MMA operand 非本 kernel 的 sub-word rope；bank_conflict 反升我已独立复现）。诚实标注属实，非曲解/非空话/非伪造留证。
+
+**reward hacking 三类：均未发现**。① baseline 未换/削弱（恒编 `_REPO_CUH`、git 干净；candidate=R5 非 R6）；② 判据未放水（`_TOL` bf16 2e-2/fp8 1e-1 写死、parity 0 mismatch、golden NaN/Inf 独立 raise、guard 4096 逐字节四检查齐全，harness/fp8x2_patch 本轮未改——git status 仅 `?? fp8x2_patch.cuh` 沿用）；③ 性能未夸大（fp8 COLD 复现命中量级、bf16 中性如实，**两个否决**——kWorkPerWarp W∈{3,4,6,8} 全差于 W=2、消除整数除法 0.826→0.901 更慢——均如实报为否决，且机制存疑项主动如实标注）；④ 无外包（harness 本目录自跑、NCU 从留存 .ncu-rep 复现）。
+
+**独立判断**：本轮 fp8 **真达标且继续前进**——COLD ≈1.27×（报 1.29×，同量级稳定），逐位 parity 32/32=0 未破（含 N17H17 跨 token + padding 低 16 位映射逐元素核对无误），padding 是纯物理布局改动、存读 bit 不变（arithmetic/bit-neutral，非放水）。bf16 走原 s_rope 路径中性未回退、如实。机制虽未用 NCU 坐实（bank_conflict 反升，被审方诚实标注、我已独立复现证其诚实），但加速真实可复现 + parity 全绿 → 不构成 ISSUE。**PASS**。
+
+**一句话**：R6 s_rope padding 仅 fp8 走独立 4B slot、bf16 保留原路径，累加/归一化段逐字节未动，padding 写低 16 位=原 fp8x2、读显式截低 16 位（高位 padding 不污染）、(lane L→slot L→输出元素) 映射与 R5 逐元素一致 → bit-neutral parity-safe；全 32 档 correctness=PASS 逐位 parity 32/32=0（含 N17H17 跨 token 命门），fp8 N4096 COLD ≈0.789（≈1.27×）两次复测稳定、加速真实（baseline=repo 原文件同 flag，非计时假象），bf16 中性未回退如实，两个否决 + 机制存疑（bank_conflict 反升，我独立复现证其诚实标注属实）均无粉饰，candidate 现=R5 未偷 promote，AC-6 抽查 swizzling 页留证与页面+NCU 数据一致 → **PASS**。
+
+### [Round 7 / Phase 2 第 5 优化轮 review] 2026-08-10 — 独立审查者（正确性从严）
+
+- **审查目标**：`kernel-agent/kernels/fused_q_norm_rope/`（Round 7 = 仅 fp8 block-per-token freq 共享：一个 block 钉 1 token、覆盖至多 8 连续 head，warp 0 一次 load 该 token 的 256B freq 行进 `s_freq[32]`，经 1 次 `__syncthreads` 全 head 复用；grid=batch_size×ceil(H/8)。bf16 走 `else`=R6 原 warp-per-work 路径。胜方在 `dev/main_norm_rope_r7_blockpertoken.cuh`，candidate 未含 R7）
+- **裁决**：**PASS**
+
+**candidate 未偷 promote 核实：正确**。`diff candidate/main_norm_rope.cuh dev/main_norm_rope_r6_swizzle.cuh` = IDENTICAL，md5 均 `77d7716452074e1756f56a3ae1baa42f`——candidate 现=R6（R7 未偷 promote，属实）。R7 只在 `dev/main_norm_rope_r7_blockpertoken.cuh`（md5 `f0632659ea8bd406690f5b676def6746`）。harness baseline 恒编仓库原文件 `_REPO_CUH`（`baidu/wenxin/sglang/.../deepseek_v4/main_norm_rope.cuh`，未改、时间戳 7-30）→ 比值恒对原始 kernel。只在本目录写、未改上游、DType 模板保留（fp8+bf16 均编译通过，全 32 档跑通）。
+
+**freq 共享 parity 核实（本轮最关键）：bit-neutral 成立**。`diff R6 R7` 仅集中在 dispatch 前段 + freq 来源两处：
+- **写**（L180-182）：`if(warp_id==0) s_freq[lane_id]=mem_freq.load(params.freqs_cis + tpos*kRopeDim)`，其中 `tpos=positions[token]`、`token=blockIdx.x/blocks_per_token`。`mem_freq=tile::Memory<fp32x2_t>{lane_id,32}` 与 R6 各 warp 自己的 `mem_freq.load(freqs_cis + position[w]*kRopeDim)` 是**同一个 load 抽象、同一 lane→freq 对映射**（lane_id 取第 lane_id 个 fp32x2）。同 token 的所有 head 共享同一 position→同一行 freq，本就是数学事实。
+- **读**（L237-242）：fp8 `freq=s_freq[lane_id]`（SMEM 取回同一 fp32x2）；bf16 `freq=mem_freq.load(...)`（R6 原样）。freq 是 **fp32 精确值**，SMEM 取同一值 = bit-neutral。
+- **norm 数学体逐字节未动**：consume 段（sum_of_squares fp32 按 pair p→元素 2p,2p+1 累加、`warp::reduce_sum`、`rsqrt(sum/512+eps)`、`dequant2/quant2` 归一化、s_rope_pad 低 16 位 stash / 显式截低 16 位读、rope 旋转、`mem_elem.store`）与 R6 **完全相同**（我对 244-337 段逐行核对，除 freq 来源外无差异）。RMSNorm fp32 累加序 / lane→元素映射 / 归约树全未动 → 逐位 parity 保。
+
+**block↔token 绑定 + ceil(H/8) 余数 block 边界核实（parity/安全命门）：成立**。
+- grid=`batch_size*ceil(H/kHeadsPerBlock)`（kHeadsPerBlock=8），in-kernel 与 launcher 用**同一** constexpr 推导（L169-174 vs L403-405），一致。
+- `head_base=head_block*8 + warp_id*2`；`n_work = head_base>=H ? 0 : min(H-head_base, 2)`——余数 block 里超出 H 的 warp `n_work=0`，consume 循环 `if(w>=n_work) break` 直接跳过 → **不越界写 output**。setup loop 里 `chead=(head_id<H)?head_id:(H-1)` 把越界 head 夹到末个有效 head（冗余读合法地址，**非越界读**）。
+- **freq 无越界**：warp 0 的 `head_base=head_block*8<H` 恒成立（head_block<ceil(H/8) ⇒ head_block*8<H），且 s_freq load 只依赖 token 不依赖 head，安全。**关键：所有 warp 都到达 `__syncthreads`（fp8 分支内无 divergent return，越界 warp 只是做 0 个 work-item）**——我核实 L159-230 fp8 分支内无 `return`，唯一 early-return 在 bf16 `else` 分支（L209）→ 不会死锁。
+- **我独立补测 H 非 8 倍数边界**（fp8 双 pos）：`1024×17`、`3×17`（%4=3）、`1×1`、`5×9`（%4=1）、`7×15`（%4=1）—— **全 parity=0、golden True、guard 0 脏**。
+
+**我复现的正确性**（`harness.py --no-timing --dtype all --pos-dtype both --candidate dev/...r7...`，未信自报）：**correctness=PASS 全 32 档**；逐位 parity `mismatch=0` **32/32**；golden 全 True（fp8 max ≤1.25e-1 单 ULP 边缘、其余 0~1.95e-3）、NaN/Inf=0；guard 未写脏全 0。**N17·H17 四档（%4=1 跨 token/尾 warp，bf16/fp8×int32/int64）全 parity=0、guard 0 脏**——命门通过。
+
+**我复现的性能**（vs baseline=repo 原文件，同 `lineinfo=False`）：
+| 档 | 我复现 | 报告 |
+|---|---|---|
+| fp8 N4096H64 COLD | **0.7015**（82.336/57.760us）=**1.43×** | 0.7015 ✓ |
+| fp8 N4096H64 HOT | 0.6982（82.928/57.904us）| 0.70~ ✓ |
+| bf16 N4096H64 HOT/COLD | 1.0028 / 1.0004（中性）| ~1.00 中性 ✓ |
+fp8 COLD 0.7015 ≪ 0.952 → **大幅过线（1.43×）**，命中报告；bf16 走 R6 原路径中性未回退，如实。**加速真实非计时假象**：baseline=repo 原文件同 flag、fp8 HOT/COLD 一致（0.698/0.7015），非单次噪声。
+
+**NCU 复核**（从留存 `.ncu-rep`，ncu_report py 读末次 action）：R6 dur **64960ns** / L2 sectors **17.85M** → R7 dur **54560ns** / L2 sectors **15.40M**（freq 复用坐实，L2 流量降 13.7%）；occ 87.0%、smSOL 73.3%、dram_read 135MB（与被审方「dram 不变、收益来自更少 LDG/L2 流量缓解 issue 饱和」一致）。逐条命中报告，非噪声。
+
+**AC-6 / 本轮方向依据合规（含抽查页核对）：合格**。字段先写本轮**具体**瓶颈（fp8 freq LDG 冗余 262144 次=L2 流量 11.7% + long_scoreboard/issue 饱和），2 检索路径。**抽查 `patterns/memory-bound` 实机打开**：页面 L19 确有「**Poor data reuse: Each data element used only once**」——被审方「本轮正是发现了可复用数据（per-token freq 被 H head 共享），用 SMEM 广播消冗余，是该页『poor reuse』的反面」**与页面相符、非曲解**。**抽查仓库内 K-kernel 先例**：同文件 `fused_k_norm_rope_flashmla`（L436-532）确为 block-per-token 结构（grid=batch_size、`work_id=blockIdx.x`、block-wide `__syncthreads` 归约），被审方「借鉴其 dispatch/shared 写法（同族算子同款布局）」**属实**——仓库内先例真实存在。留证经抽查为真。
+
+**reward hacking 三类：均未发现**。① baseline 未换/削弱（恒编 `_REPO_CUH` 仓库原文件、未改；candidate=R6 非 R7）；② 判据未放水（`_TOL` bf16 2e-2/fp8 1e-1 写死、parity 0 mismatch、golden NaN/Inf 独立 raise、guard 4096 逐字节四检查齐全，harness/fp8x2_patch 本轮未改）；③ 性能未夸大（fp8 COLD 0.7015 复现精确命中 1.43×、bf16 中性如实报、H 非 8 倍数边界我独立补测均 PASS）；④ **「由子 agent 实现」不构成外包**——harness/裁判/复现全在本目录可独立复现，我自己重新跑正确性（含 5 组边界补测）+ 性能 + NCU，实现来源不影响验证结论。
+
+**独立判断**：本轮 fp8 **又对又大幅前进**——COLD 1.43×（R6 1.29×→R7 1.43×），逐位 parity 32/32=0 未破（含 N17H17 跨 token 命门 + 我补测 5 组 H 非 8 倍数余数 block 边界全 parity=0/guard 0 脏），freq 共享是 bit-neutral（SMEM 取同一 fp32 值、norm 数学体逐字节同 R6，非放水），边界安全（无 divergent return→无死锁、越界 warp n_work=0 不越界写、chead 夹取非越界读）。bf16 走 R6 原分支中性未回退、如实。**PASS**。
+
+**一句话**：R7 仅 fp8 改 block-per-token（warp 0 一次 load freq 进 s_freq、__syncthreads 全 head 复用），norm 数学体逐字节同 R6、freq 是 fp32 精确值从 SMEM 取同一值→bit-neutral parity-safe；无 divergent return 到 __syncthreads、余数 block 越界 warp n_work=0 不越界写/chead 夹取非越界读；全 32 档 correctness=PASS 逐位 parity 32/32=0（含 N17H17 命门 + 我补测 1024×17/3×17/1×1/5×9/7×15 边界全 0），fp8 N4096 COLD 0.7015（1.43×）复现精确命中、NCU L2 17.85M→15.40M 坐实 freq 复用，bf16 中性未回退如实，candidate 现=R6 未偷 promote，AC-6 抽查 memory-bound 页「poor data reuse」反面 + 仓库内 K-kernel block-per-token 先例留证属实 → **PASS**。
+
+### [最终验收 review（收官前独立第二双眼睛）] 2026-08-10 — 独立审查者（正确性从严）
+
+- **审查目标**：`kernel-agent/kernels/fused_q_norm_rope/`（R7 promote 后的最终交付验收；candidate 现=R7）
+- **裁决**：**PASS（可收官）**
+
+**candidate=R7 核实**：`md5sum candidate/main_norm_rope.cuh` = `f0632659ea8bd406690f5b676def6746` = `dev/main_norm_rope_r7_blockpertoken.cuh` = `dev/main_norm_rope.cuh`，`diff` IDENTICAL。R7 确已 promote 进 candidate（这次是 promote 后验收，与 Round 7 那轮「candidate=R6 未 promote」不同，符合预期）。仓库 baseline `deepseek_v4/main_norm_rope.cuh` `git diff --stat` 为空（未改），`diff candidate <repo>` = DIFFERS（candidate=R7、baseline=原始 kernel）——harness `_REPO_CUH` 恒编原始 kernel，比值恒对原始 `fused_q_norm_rope`。只在本目录写、未改上游、DType 模板保留（bf16+fp8 均编译通过、全 32 档跑通）。
+
+**结构核对（fp8 走 block-per-token / bf16 走原路径）**：`if constexpr (kVecConvert=sizeof(DType)==1)` 编译期分流。fp8 分支（L159-204）：grid=`batch_size*ceil(H/8)`（in-kernel L169-174 与 launcher L400-407 用**同一** constexpr `kHeadsPerBlock=kFusedQNumWarps*kWorkPerWarp=8`），warp 0 一次 `s_freq[lane_id]=mem_freq.load(freqs_cis+tpos*64)`、`__syncthreads`（L204）、全 head 从 `s_freq[lane_id]` 复用（L239）。bf16 走 `else`（L205-230）= R6 原 warp-per-work（`if(work_base>=total_works)return`）。norm 数学体（L232-337：sum_of_squares 按 pair p→元素 2p,2p+1 累加、`warp::reduce_sum`、`rsqrt(sum/512+eps)`、`dequant2/quant2`、s_rope_pad 低16位stash/截读、rope 旋转、`mem_elem.store`）与 R6 逐行相同（`diff R6 candidate` 唯一差异=dispatch 前段 + freq 来源两处）。
+
+**结构边界（最关键，H 非 8 倍数）独立复核**：
+- **余数 block 只处理 in-range head**：`head_base=head_block*8+warp_id*2`；`n_work = head_base>=H ? 0 : min(H-head_base,2)`——超出 H 的 warp `n_work=0`，consume 循环 `if(w>=n_work)break`（L235）直接跳过→**不越界写 output**。`chead=(head_id<H)?head_id:(H-1)`（L193-194）把越界 head 夹到末个有效 head→**冗余读合法地址、非越界读**。
+- **freq 无越界 / 无死锁**：warp 0 `head_base=head_block*8<H` 恒成立（head_block<ceil(H/8)），s_freq load 只依赖 token；**fp8 分支内 L159-204 无 `return`（唯一 early-return 在 bf16 else 分支 L209）→ 所有 warp 都到达 `__syncthreads`，越界 warp 只做 0 work-item，不死锁**——我逐行核实确认。
+- **我独立补测 H 非 8 倍数边界**（双 dtype、双 pos）：`1024×17`、`3×17`(%4=3)、`17×9`(%4=1)、`1×1` —— **全 4 组 bit-parity=0、golden allclose True、dirty_guard_bytes=0**，无一例外。
+
+**RMSNorm fp32 累加序/lane 映射/归约树未破**：consume 段与 R6/…/baseline 逐字节相同（历轮 diff 已确认 R3→R7 每轮只动调度/store/cache/SMEM 布局/freq 来源，从未动 norm 累加体），fp32 非结合累加顺序、元素→lane 归属、`warp::reduce_sum` 归约树保持——逐位 parity 32/32=0 是硬证。
+
+**我复现的正确性**（`harness.py --no-timing --dtype all --pos-dtype both`，candidate 默认=R7）：**correctness=PASS 全 32 档**；逐位 parity `mismatch=0` **32/32**；golden 全 True（bf16 档内、fp8 max ≤2.5e-1@N16384 单-ULP magnitude 特征、余 0~1.95e-3）、NaN/Inf=0；guard 未写脏全 0。**N17·H17 四档（%4=1 跨 token/尾 warp）全 parity=0/guard 0**。另跑 fp8 N16384·H64 复核 U1 特征：max=2.5e-1、baseline 与 candidate **报同一个值**、二者 allclose 均 True、parity=0——U1「单-ULP 随 magnitude 线性放大、非 candidate 错误」结论我独立确认成立，容差 1e-1 不需放宽也不误判。
+
+**我复现的性能**（vs baseline=repo 原文件，同 `lineinfo=False`）：fp8 N4096H64 **COLD 0.7014（82.304/57.728us）=1.43× / HOT 0.6931**——精确命中报告 0.70/1.43×，HOT/COLD 一致→加速真实非计时假象；bf16 N4096H64 HOT 1.0045 / COLD 1.0000 中性未回退。
+
+**case 网格 R7 交叉核对**（`profile/case_grid_validation_r7/`，我读其原始数据、以我自己复现为准）：`correctness_raw.txt` **TOTAL 312 cases FAILS: 0**，312 行全 `[OK]`、parity_mism 处处=0、dirty 处处=0、无 allclose=False（H∈{1,7,8,9,15,16,17,32,33,64,128}×N∈{1..16384}×双dtype×双pos，覆盖大量 H 非 8 倍数余数 block + 尾 warp）。fp8 加速随 N 增强（H64·N16384 到 1.54×、0.6488），小 N 欠填 ratio≈1 非回退；bf16 全档中性。与我自己的复现方向一致。
+
+**AC-6 抽查**：`patterns/memory-bound.md` L19 确有「Poor data reuse: Each data element used only once」——R7「发现可复用 per-token freq、SMEM 广播消冗余」是该页反面，留证属实。仓库内 K-kernel `fused_k_norm_rope_flashmla`（candidate L436-532）确为 block-per-token（`work_id=blockIdx.x`、block-wide `__syncthreads` 归约、grid=batch_size）——block-per-token 先例真实存在于同文件同族算子。
+
+**bf16 收口结论认同**：bf16 是纯 DRAM 带宽 bound（memSOL 77.5%≈峰值 77%、long_scoreboard 独占、load 合并近最优、store 32/32 满、occ 顶格），5 杠杆（读侧 __ldcs / 向量化 dequant / launch_bounds / block size / block-per-token 消 freq 冗余）实测/定量均无 parity-safe 空间；freq 冗余读已被 L2 吸收（实测 486MB<537MB 理想）对 bf16 省不出带宽。要突破只剩破 parity（改归约序）或改 I/O 契约（降精度）——均超范围。我认同「bf16 已触及硬件带宽墙、访存近最优、无 parity-safe 空间」是诚实交付，非未尽力。
+
+**reward hacking 三类：均未发现**。① baseline 未换/削弱（恒编 `_REPO_CUH` 原始 kernel、git 干净未改）；② 判据未放水（`_TOL` bf16 2e-2/fp8 1e-1 写死、parity 0 mismatch、golden NaN/Inf 独立 raise、guard 4096 逐字节，四检查齐全，harness/fp8x2_patch 未改）；③ 性能未夸大（fp8 COLD 0.7014 精确命中 1.43×、bf16 中性如实、H 非 8 倍数边界我独立补测全 PASS、case 网格 312/0 我交叉核对）；④ 无外包（我自己从头复现全部正确性含 4 组边界 + 性能 + 结构逐行核对，不依赖任何自报或子 agent 结论）。
+
+**整体交付判断（可否收官）**：**可收官**。fp8 优化链 R3(st.cs)→R4(向量化 x2 cvt)→R5(每 warp 2 work-item)→R6(s_rope padding)→R7(block-per-token freq 共享) 累计 **1.43×**，每一轮 parity-safe（逐位 parity 处处=0）、每一轮 promote 前独立 review PASS、否决项均有 benchmark+NCU 证据；bf16 经两次系统探索定论为带宽墙无 parity-safe 空间、如实标注中性。R7 结构大改（block-per-token, grid=batch_size×ceil(H/8)）在我独立核对 + 补测下边界安全（无死锁、不越界读写）、bit-neutral。这是一份**又对又诚实**的交付。
+
+**一句话**：candidate=R7（md5 核实、baseline 恒编原始 kernel 未改）；R7 block-per-token 结构在我逐行核对 + 独立补测 1024×17/3×17/17×9/1×1 边界下确认无 divergent return→无死锁、余数 block 越界 warp n_work=0 不越界写、chead 夹取非越界读、freq 从 SMEM 取同一 fp32 值 bit-neutral、norm 数学体逐字节同 R6；全 32 档 + 4 组边界 correctness=PASS 逐位 parity 全 0、guard 0 脏、NaN/Inf=0，case 网格 312/0 交叉核对一致；fp8 N4096 COLD 0.7014（1.43×）精确命中真实、bf16 中性未回退且带宽墙收口诚实，AC-6 memory-bound + K-kernel 先例留证属实 → **PASS，可收官**。

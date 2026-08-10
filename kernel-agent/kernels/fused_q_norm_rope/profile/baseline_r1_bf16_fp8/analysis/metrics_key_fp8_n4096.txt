@@ -1,0 +1,45 @@
+=== fp8_n4096 :: full_fp8_n4096.ncu-rep ===
+kernel: fused_q_norm_rope
+  duration                         = 7.901e+04 ns
+  SM SOL %                         = 67.68 %
+  Mem SOL %                        = 37.07 %
+  DRAM read %peak                  = 21.58 %
+  DRAM write %peak                 = 15.49 %
+  DRAM bytes read                  = 1.351e+08 byte
+  DRAM bytes write                 = 9.694e+07 byte
+  achieved occ %                   = 85.78 %
+  theoretical occ %                = 100 %
+  waves/SM                         = 26.95
+  grid size                        = 65536
+  regs/thread                      = 32 register/thread
+  occ lim regs                     = 16 block
+  occ lim smem                     = 51 block
+  occ lim warps                    = 16 block
+  occ lim blocks                   = 32 block
+  SM count                         = 152
+  IPC                              = 2.863 inst/cycle
+  LSU pipe %                       = 14.83 %
+  ALU pipe %                       = 66.73 %
+  FMA pipe %                       = 26.24 %
+  L1 hit %                         = 21.61 %
+  L2 hit %                         = 8.89 %
+  store bytes/sector (max32)       = 32 byte/sector
+  global LD insts                  = 7.864e+05 inst
+  global ST insts                  = 5.243e+05 inst
+  shared LD insts                  = 2.621e+05 inst
+  shared ST insts                  = 2.621e+05 inst
+  local LD (spill)                 = 0 inst
+  local ST (spill)                 = 0 inst
+  --- stalls (warps stalled per issue-active cycle) ---
+  stall not_selected                 = 6.2422
+  stall math_pipe_throttle           = 4.2313
+  stall long_scoreboard              = 4.2240
+  stall wait                         = 1.4644
+  stall selected                     = 1.0000
+  stall short_scoreboard             = 0.8215
+  stall no_instruction               = 0.1043
+  stall drain                        = 0.0885
+  stall mio_throttle                 = 0.0581
+  stall lg_throttle                  = 0.0000
+  stall barrier                      = 0.0000
+  stall membar                       = 0.0000

@@ -1,0 +1,97 @@
+
+### timing DType=bf16 ...
+  [bf16 N=     1 H= 64] direct HOT : baseline 13.424us  candidate 13.808us  ratio=1.0286
+  [bf16 N=     1 H= 64] direct COLD: baseline 8.336us  candidate 7.024us  ratio=0.8426  (flush 50 MiB/iter)
+  [bf16 N=     8 H= 64] direct HOT : baseline 12.144us  candidate 12.544us  ratio=1.0329
+  [bf16 N=     8 H= 64] direct COLD: baseline 7.120us  candidate 7.216us  ratio=1.0135  (flush 50 MiB/iter)
+  [bf16 N=    64 H= 64] direct HOT : baseline 11.472us  candidate 11.632us  ratio=1.0139
+  [bf16 N=    64 H= 64] direct COLD: baseline 8.608us  candidate 8.608us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=   256 H= 64] direct HOT : baseline 12.720us  candidate 12.944us  ratio=1.0176
+  [bf16 N=   256 H= 64] direct COLD: baseline 12.640us  candidate 12.640us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=  1024 H= 64] direct HOT : baseline 28.336us  candidate 27.584us  ratio=0.9735
+  [bf16 N=  1024 H= 64] direct COLD: baseline 27.040us  candidate 27.232us  ratio=1.0071  (flush 50 MiB/iter)
+  [bf16 N=  4096 H= 64] direct HOT : baseline 83.664us  candidate 83.264us  ratio=0.9952
+  [bf16 N=  4096 H= 64] direct COLD: baseline 82.336us  candidate 83.360us  ratio=1.0124  (flush 50 MiB/iter)
+  [bf16 N= 16384 H= 64] direct HOT : baseline 304.128us  candidate 306.816us  ratio=1.0088
+  [bf16 N= 16384 H= 64] direct COLD: baseline 302.496us  candidate 306.736us  ratio=1.0140  (flush 50 MiB/iter)
+  [bf16 N=  4096 H= 16] direct HOT : baseline 28.032us  candidate 27.360us  ratio=0.9760
+  [bf16 N=  4096 H= 16] direct COLD: baseline 27.040us  candidate 27.040us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=  4096 H= 32] direct HOT : baseline 46.336us  candidate 46.464us  ratio=1.0028
+  [bf16 N=  4096 H= 32] direct COLD: baseline 45.472us  candidate 46.464us  ratio=1.0218  (flush 50 MiB/iter)
+  [bf16 N=  4096 H=  8] direct HOT : baseline 17.392us  candidate 17.776us  ratio=1.0221
+  [bf16 N=  4096 H=  8] direct COLD: baseline 16.800us  candidate 16.800us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=  4096 H= 17] direct HOT : baseline 29.920us  candidate 29.824us  ratio=0.9968
+  [bf16 N=  4096 H= 17] direct COLD: baseline 29.088us  candidate 29.088us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=  4096 H=  9] direct HOT : baseline 18.192us  candidate 18.384us  ratio=1.0106
+  [bf16 N=  4096 H=  9] direct COLD: baseline 18.848us  candidate 18.848us  ratio=1.0000  (flush 50 MiB/iter)
+  [bf16 N=  4096 H= 33] direct HOT : baseline 48.112us  candidate 48.608us  ratio=1.0103
+  [bf16 N=  4096 H= 33] direct COLD: baseline 47.520us  candidate 48.544us  ratio=1.0215  (flush 50 MiB/iter)
+  [bf16 N=     1 H=128] direct HOT : baseline 11.392us  candidate 11.408us  ratio=1.0014
+  [bf16 N=     1 H=128] direct COLD: baseline 6.704us  candidate 6.592us  ratio=0.9833  (flush 50 MiB/iter)
+  [bf16 N=   256 H=128] direct HOT : baseline 17.232us  candidate 17.184us  ratio=0.9972
+  [bf16 N=   256 H=128] direct COLD: baseline 16.800us  candidate 16.944us  ratio=1.0086  (flush 50 MiB/iter)
+
+### timing DType=fp8 ...
+  [fp8 N=     1 H= 64] direct HOT : baseline 11.792us  candidate 12.144us  ratio=1.0299
+  [fp8 N=     1 H= 64] direct COLD: baseline 7.024us  candidate 8.416us  ratio=1.1982  (flush 50 MiB/iter)
+  [fp8 N=     8 H= 64] direct HOT : baseline 11.456us  candidate 10.880us  ratio=0.9497
+  [fp8 N=     8 H= 64] direct COLD: baseline 6.736us  candidate 8.608us  ratio=1.2779  (flush 50 MiB/iter)
+  [fp8 N=    64 H= 64] direct HOT : baseline 11.056us  candidate 10.880us  ratio=0.9841
+  [fp8 N=    64 H= 64] direct COLD: baseline 8.608us  candidate 8.608us  ratio=1.0000  (flush 50 MiB/iter)
+  [fp8 N=   256 H= 64] direct HOT : baseline 12.720us  candidate 10.896us  ratio=0.8566
+  [fp8 N=   256 H= 64] direct COLD: baseline 12.704us  candidate 10.784us  ratio=0.8489  (flush 50 MiB/iter)
+  [fp8 N=  1024 H= 64] direct HOT : baseline 26.960us  candidate 21.024us  ratio=0.7798
+  [fp8 N=  1024 H= 64] direct COLD: baseline 27.040us  candidate 20.928us  ratio=0.7740  (flush 50 MiB/iter)
+  [fp8 N=  4096 H= 64] direct HOT : baseline 83.792us  candidate 58.304us  ratio=0.6958
+  [fp8 N=  4096 H= 64] direct COLD: baseline 81.280us  candidate 55.872us  ratio=0.6874  (flush 50 MiB/iter)
+  [fp8 N= 16384 H= 64] direct HOT : baseline 303.536us  candidate 196.944us  ratio=0.6488
+  [fp8 N= 16384 H= 64] direct COLD: baseline 301.472us  candidate 196.000us  ratio=0.6501  (flush 50 MiB/iter)
+  [fp8 N=  4096 H= 16] direct HOT : baseline 25.968us  candidate 20.656us  ratio=0.7954
+  [fp8 N=  4096 H= 16] direct COLD: baseline 27.008us  candidate 20.896us  ratio=0.7737  (flush 50 MiB/iter)
+  [fp8 N=  4096 H= 32] direct HOT : baseline 46.576us  candidate 33.680us  ratio=0.7231
+  [fp8 N=  4096 H= 32] direct COLD: baseline 45.440us  candidate 33.184us  ratio=0.7303  (flush 50 MiB/iter)
+  [fp8 N=  4096 H=  8] direct HOT : baseline 17.136us  candidate 14.880us  ratio=0.8683
+  [fp8 N=  4096 H=  8] direct COLD: baseline 16.768us  candidate 14.720us  ratio=0.8779  (flush 50 MiB/iter)
+  [fp8 N=  4096 H= 17] direct HOT : baseline 27.456us  candidate 23.200us  ratio=0.8450
+  [fp8 N=  4096 H= 17] direct COLD: baseline 27.040us  candidate 23.968us  ratio=0.8864  (flush 50 MiB/iter)
+  [fp8 N=  4096 H=  9] direct HOT : baseline 19.184us  candidate 17.440us  ratio=0.9091
+  [fp8 N=  4096 H=  9] direct COLD: baseline 18.816us  candidate 16.800us  ratio=0.8929  (flush 50 MiB/iter)
+  [fp8 N=  4096 H= 33] direct HOT : baseline 47.616us  candidate 35.632us  ratio=0.7483
+  [fp8 N=  4096 H= 33] direct COLD: baseline 45.472us  candidate 35.344us  ratio=0.7773  (flush 50 MiB/iter)
+  [fp8 N=     1 H=128] direct HOT : baseline 11.040us  candidate 10.976us  ratio=0.9942
+  [fp8 N=     1 H=128] direct COLD: baseline 6.592us  candidate 8.608us  ratio=1.3058  (flush 50 MiB/iter)
+  [fp8 N=   256 H=128] direct HOT : baseline 16.864us  candidate 14.800us  ratio=0.8776
+  [fp8 N=   256 H=128] direct COLD: baseline 16.800us  candidate 14.720us  ratio=0.8762  (flush 50 MiB/iter)
+
+========================================================================
+dtype  H    N       HOT     COLD
+bf16   64       1  1.0286  0.8426
+bf16   64       8  1.0329  1.0135
+bf16   64      64  1.0139  1.0000
+bf16   64     256  1.0176  1.0000
+bf16   64    1024  0.9735  1.0071
+bf16   64    4096  0.9952  1.0124
+bf16   64   16384  1.0088  1.0140
+bf16   16    4096  0.9760  1.0000
+bf16   32    4096  1.0028  1.0218
+bf16    8    4096  1.0221  1.0000
+bf16   17    4096  0.9968  1.0000
+bf16    9    4096  1.0106  1.0000
+bf16   33    4096  1.0103  1.0215
+bf16  128       1  1.0014  0.9833
+bf16  128     256  0.9972  1.0086
+ fp8   64       1  1.0299  1.1982
+ fp8   64       8  0.9497  1.2779
+ fp8   64      64  0.9841  1.0000
+ fp8   64     256  0.8566  0.8489
+ fp8   64    1024  0.7798  0.7740
+ fp8   64    4096  0.6958  0.6874
+ fp8   64   16384  0.6488  0.6501
+ fp8   16    4096  0.7954  0.7737
+ fp8   32    4096  0.7231  0.7303
+ fp8    8    4096  0.8683  0.8779
+ fp8   17    4096  0.8450  0.8864
+ fp8    9    4096  0.9091  0.8929
+ fp8   33    4096  0.7483  0.7773
+ fp8  128       1  0.9942  1.3058
+ fp8  128     256  0.8776  0.8762

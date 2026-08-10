@@ -1,0 +1,297 @@
+"""Fused paged-MQA-logits + streaming top-512 (bf16), Triton, with split-KV.
+
+Contract mirrors the CUDA v2 candidate so the shared judge harness drives it
+unchanged: fused_forward(q_bhd, kv_bf16, weight, seq_lens, page_table, out_page,
+out_raw, page_size, max_seq_len).
+
+Fusion invariant (v2 CLAUDE.md): the per-position logits are produced on chip
+(registers/SRAM) and NEVER written to global memory. Only the selected top-512
+indices leave the kernel. Split-KV's per-segment partial top-512 (packed keys)
+MAY land in a small global scratch (batch*split*512 int64, size independent of
+sequence length) -- that is the sanctioned cost of splitting, NOT the full logits
+tensor, which never exists in global.
+
+Two stages:
+  stage1 (grid = batch x split): each program owns one KV segment of one batch
+    row, runs the streaming running-top-512 over its segment, writes its partial
+    top-512 packed keys to global scratch. Splitting the query's KV across `split`
+    CTAs shortens the per-CTA serial merge chain (Round 3 showed the single-CTA
+    16K path is latency-bound on ~32 sequential merges) AND fills the SMs when
+    batch alone is small.
+  combine (grid = batch): reads the split*512 partial keys for its row, selects
+    the global top-512 among them (exact: every global top-512 element lives in
+    exactly one segment and is kept by that segment's own top-512), unpacks to
+    raw/page indices.
+
+Logits math (bf16 paged-MQA, matches tilelang baseline + v1 kernel):
+    logits[b,pos] = sum_h relu( sum_d K[b,pos,d] * Q[b,h,d] ) * weight[b,h]
+K gathered through the page table: page=pos>>6, off=pos&63,
+block=page_table[b,page]. bf16 x bf16 -> fp32 accum.
+
+Packed key: order-preserving fp32 score bits << 20 | raw position (low 20 bits),
+so tl.sort/tl.topk orders by score yet carries the index losslessly.
+"""
+import os
+
+import torch
+import triton
+import triton.language as tl
+
+HEADS = 64
+HEAD_DIM = 128
+TOPK = 512
+PAGE_SIZE = 64
+PAGE_BITS = 6
+CHUNK = 512
+# K position sub-tiling inside a chunk (Round 2): resident K tile is only
+# [GEMM_M, HEAD_DIM], one tl.join stitches the two sub-tiles' keys back to CHUNK.
+GEMM_M = 256
+NSUB = CHUNK // GEMM_M
+NEG_INF_KEY = 0x7FFFFF
+NUM_SM = 152           # B200; drives split-KV grid fill
+# split trades off: stage1's per-CTA merge chain SHRINKS with split, the combine
+# grows -- but the two-level tree combine (l1 + final) keeps combine cheap (~33us
+# flat), so split can go higher than the old single-topk combine allowed. Measured
+# on 1x65536: split 8->16->32 gives stage1 206->106->55us. Cap at 32 (combine tree
+# still cheap, and batch*split stays ~O(SM) so partial scratch <= ~512KB).
+MAX_SPLIT = 32
+# Below this many pages per segment, split-KV's launch + combine overhead outweighs
+# the shorter merge chain; keep such (short) sequences on the single-CTA path.
+MIN_SEG_PAGES = 16     # 16 pages = 1024 positions = one full mid-band chunk pair
+
+# constexpr mirrors so the @jit kernels can reference them.
+_HEADS = tl.constexpr(HEADS)
+_HEAD_DIM = tl.constexpr(HEAD_DIM)
+_TOPK = tl.constexpr(TOPK)
+_PAGE_SIZE = tl.constexpr(PAGE_SIZE)
+_PAGE_BITS = tl.constexpr(PAGE_BITS)
+_CHUNK = tl.constexpr(CHUNK)
+_GEMM_M = tl.constexpr(GEMM_M)
+_NSUB = tl.constexpr(NSUB)
+_NEG_INF_KEY = tl.constexpr(NEG_INF_KEY)
+
+
+@triton.jit
+def _subtile_keys(seg_start, c, s, b, seq_len, q_dh, w, offs_d, kv_ptr,
+                  page_table_ptr, pt_stride_b, kv_stride_blk, np_total):
+    """One GEMM_M-wide position sub-tile -> GEMM_M packed int64 keys.
+    logit[pos] = sum_h relu(K[pos,:] . Q[:,h]) * w[h]; packed = order-preserving
+    score bits << 20 | pos. Resident K tile is only [GEMM_M, HEAD_DIM].
+    Absolute position = seg_start + c*CHUNK + s*GEMM_M + lane."""
+    pos_s = seg_start + c * _CHUNK + s * _GEMM_M + tl.arange(0, _GEMM_M)
+    valid_s = pos_s < seq_len
+    page_s = pos_s >> _PAGE_BITS
+    off_s = pos_s & (_PAGE_SIZE - 1)
+    block_s = tl.load(page_table_ptr + b * pt_stride_b + page_s,
+                      mask=page_s < np_total, other=0)
+    k_addr = (block_s[:, None] * kv_stride_blk
+              + off_s[:, None] * _HEAD_DIM + offs_d[None, :])
+    k_tile = tl.load(kv_ptr + k_addr, mask=valid_s[:, None], other=0.0)
+    sc = tl.dot(k_tile, q_dh, out_dtype=tl.float32)           # [GEMM_M, HEADS]
+    sc = tl.where(sc > 0.0, sc, 0.0) * w[None, :]
+    logit_s = tl.sum(sc, axis=1)                              # [GEMM_M]
+    logit_s = tl.where(valid_s, logit_s, float("-inf"))
+    bits = logit_s.to(tl.int32, bitcast=True).to(tl.int64) & 0xFFFFFFFF
+    signset = (bits >> 31) != 0
+    key = tl.where(signset, bits ^ 0xFFFFFFFF, bits ^ 0x80000000) & 0xFFFFFFFF
+    return (key << 20) | (pos_s.to(tl.int64) & ((1 << 20) - 1))
+
+
+@triton.jit
+def _stage1_kernel(
+    q_ptr, kv_ptr, weight_ptr, seq_lens_ptr, page_table_ptr, partial_ptr,
+    np_total, q_stride_b, kv_stride_blk, w_stride_b, pt_stride_b, part_stride_b,
+    SPLIT: tl.constexpr, SEG_NCH: tl.constexpr,
+):
+    """grid = (batch, split). Each program streams its KV segment -> partial
+    top-512 packed keys, written to partial_ptr[b, sp, :]."""
+    b = tl.program_id(0)
+    sp = tl.program_id(1)
+    seq_len = tl.load(seq_lens_ptr + b)
+
+    # segment boundaries in PAGE units, then positions (page-aligned so page/off
+    # math stays exact). np_total pages split into SPLIT contiguous segments.
+    pages_per_seg = (np_total + SPLIT - 1) // SPLIT
+    seg_start = sp * pages_per_seg * _PAGE_SIZE
+    seg_end = tl.minimum((sp + 1) * pages_per_seg * _PAGE_SIZE, seq_len)
+
+    offs_d = tl.arange(0, _HEAD_DIM)
+    offs_h = tl.arange(0, _HEADS)
+    q_dh = tl.load(
+        q_ptr + b * q_stride_b + offs_h[None, :] * _HEAD_DIM + offs_d[:, None])
+    w = tl.load(weight_ptr + b * w_stride_b + offs_h)
+
+    run = tl.full((_TOPK,), (_NEG_INF_KEY << 20), dtype=tl.int64)
+    for c in range(0, SEG_NCH):
+        # skip chunks fully past this segment (seg_start + c*CHUNK >= seg_end):
+        # _subtile_keys masks pos >= seq_len already, but we also bound by seg_end
+        # so a segment never steals another segment's positions.
+        k0 = _subtile_keys(seg_start, c, 0, b, seg_end, q_dh, w, offs_d, kv_ptr,
+                           page_table_ptr, pt_stride_b, kv_stride_blk, np_total)
+        k1 = _subtile_keys(seg_start, c, 1, b, seg_end, q_dh, w, offs_d, kv_ptr,
+                           page_table_ptr, pt_stride_b, kv_stride_blk, np_total)
+        packed = tl.reshape(tl.join(k0, k1), (_CHUNK,))
+        both = tl.join(run, packed)
+        flat = tl.reshape(both, (2 * _TOPK,))
+        srt = tl.sort(flat, descending=True)
+        two = tl.reshape(srt, (2, _TOPK))
+        sel = (tl.arange(0, 2) == 0)[:, None]
+        run = tl.sum(tl.where(sel, two, 0), axis=0)
+
+    slot = tl.arange(0, _TOPK)
+    tl.store(partial_ptr + b * part_stride_b + sp * _TOPK + slot, run)
+
+
+@triton.jit
+def _combine_reduce_kernel(
+    src_ptr, dst_ptr, src_stride_b, dst_stride_b,
+    NIN: tl.constexpr, FANIN: tl.constexpr, W: tl.constexpr,
+):
+    """One reduction level of the combine tree. grid = (batch, NIN//FANIN). Node n
+    reduces FANIN consecutive 512-key partials -> one top-512, written to
+    dst[b, n*512:]. Fan-in 4 per level is the measured sweet spot (isolated bench:
+    split=16 [4,4]=46us vs [2,8]=59us vs single [16]=101us; split=32 [4,4,2]=56us
+    vs single [32]=207us) -- a single wide topk is latency-bound, but too many thin
+    levels add launch/round-trip overhead, so ~4-wide balances both. Exact: each
+    node's top-512 keeps every eventual top-512 element among its FANIN inputs."""
+    b = tl.program_id(0)
+    n = tl.program_id(1)
+    slot = tl.arange(0, W)
+    cnt = FANIN * _TOPK
+    keys = tl.load(src_ptr + b * src_stride_b + n * (FANIN * _TOPK) + slot,
+                   mask=slot < cnt, other=(_NEG_INF_KEY << 20))
+    tl.store(dst_ptr + b * dst_stride_b + n * _TOPK + tl.arange(0, _TOPK),
+             tl.topk(keys, _TOPK))
+
+
+@triton.jit
+def _combine_kernel(
+    partial_ptr, page_table_ptr, out_page_ptr, out_raw_ptr,
+    part_stride_b, pt_stride_b, op_stride_b, or_stride_b,
+    SPLIT: tl.constexpr, COMBINE_W: tl.constexpr,
+):
+    """Final combine. grid = (batch,). Reads SPLIT*512 partial packed keys (either
+    the raw stage1 partials when SPLIT is small, or the G level-1 tops), selects
+    the global top-512, unpacks to raw/page indices. COMBINE_W = next-pow2(SPLIT*512)."""
+    b = tl.program_id(0)
+    slot = tl.arange(0, COMBINE_W)
+    n_part = SPLIT * _TOPK
+    keys = tl.load(partial_ptr + b * part_stride_b + slot,
+                   mask=slot < n_part, other=(_NEG_INF_KEY << 20))
+    run = tl.topk(keys, _TOPK)                               # global top-512
+
+    sel_key = (run >> 20) & 0xFFFFFFFF
+    raw = (run & ((1 << 20) - 1)).to(tl.int32)
+    is_inf = sel_key == _NEG_INF_KEY
+    raw = tl.where(is_inf, -1, raw)
+    r_page = raw >> _PAGE_BITS
+    r_off = raw & (_PAGE_SIZE - 1)
+    phys = tl.load(page_table_ptr + b * pt_stride_b + r_page,
+                   mask=~is_inf, other=0)
+    out_page = (phys << _PAGE_BITS) | r_off
+    out_page = tl.where(is_inf, -1, out_page).to(tl.int32)
+    oslot = tl.arange(0, _TOPK)
+    tl.store(out_raw_ptr + b * or_stride_b + oslot, raw)
+    tl.store(out_page_ptr + b * op_stride_b + oslot, out_page)
+
+
+def _pick_split(batch, np_total):
+    """split = fill 152 SMs with grid=batch*split, capped so a segment still has
+    >=1 page, and rounded down to a power of two (combine buffer = split*512 must
+    be a power-of-two tile for tl.sort). Guarded by O(SM) per the v2 plan so the
+    partial scratch (batch*split*512) can never balloon toward np_total.
+
+    Short sequences stay single-CTA: split-KV's extra launches + tiny per-segment
+    topk overhead only pay off once the single-CTA serial merge chain is long. A
+    segment shorter than a few chunks isn't worth splitting -- require the split to
+    leave each segment with >= MIN_SEG_PAGES pages, else fall back to split=1
+    (which is exactly the Round-2 single-CTA path). This keeps the mid band (<=1024,
+    np_total<=16) on the fast single-CTA route instead of regressing it."""
+    if np_total <= MIN_SEG_PAGES * 2:
+        return 1
+    raw = max(1, min(np_total // MIN_SEG_PAGES, round(NUM_SM / max(batch, 1))))
+    p2 = 1 << (raw.bit_length() - 1)          # floor power of two
+    return max(1, min(p2, MAX_SPLIT))
+
+
+def fused_forward(q, kvcache, weight, seq_lens, page_table, out_page,
+                  out_raw, page_size, max_seq_len=None):
+    """q:[B,H,D]bf16  kvcache:[nb,PBLK,D]bf16  weight:[B,H]fp32
+    seq_lens:[B]i32  page_table:[B,L]i32  out_page/out_raw:[B,512]i32.
+
+    Split-KV: stage1 (grid batch x split) streams each KV segment to a partial
+    top-512 in a small global scratch (size batch*split*512, independent of
+    sequence length); combine (grid batch) selects the global top-512. The full
+    logits tensor never touches global."""
+    assert page_size == PAGE_SIZE, f"kernel hardcodes page_size={PAGE_SIZE}"
+    assert q.shape[1] == HEADS and q.shape[2] == HEAD_DIM
+    q = q.contiguous()
+    kvcache = kvcache.contiguous()
+    weight = weight.contiguous()
+    seq_lens = seq_lens.contiguous()
+    page_table = page_table.contiguous()
+
+    batch = q.shape[0]
+    np_total = page_table.shape[1]
+    if max_seq_len is None:
+        max_seq_len = np_total * page_size
+
+    split = int(os.environ.get("TRITON_SPLIT", 0)) or _pick_split(batch, np_total)
+    num_warps = int(os.environ.get("TRITON_NWARPS", 8))
+    num_stages = int(os.environ.get("TRITON_NSTAGES", 1))
+
+    pages_per_seg = (np_total + split - 1) // split
+    seg_nch = (pages_per_seg * PAGE_SIZE + CHUNK - 1) // CHUNK
+
+    partial = torch.empty(batch, split * TOPK, dtype=torch.int64,
+                          device=q.device)
+    _stage1_kernel[(batch, split)](
+        q, kvcache, weight, seq_lens, page_table, partial,
+        np_total,
+        q.stride(0), kvcache.stride(0), weight.stride(0), page_table.stride(0),
+        partial.stride(0),
+        SPLIT=split, SEG_NCH=seg_nch,
+        num_stages=num_stages, num_warps=num_warps,
+    )
+
+    # Combine tree. A single topk(split*512) combine is grid=batch, latency-bound
+    # on one wide topk that barely uses the SMs (probe: split=16 [16]=101us). Reduce
+    # the `split` partials by a balanced fan-in-4 tree: each level's grid is
+    # (batch, nodes) so it fills SMs, and each node's topk is only FANIN*512 wide.
+    # Fan-in 4 is the measured sweet spot (split=16 [4,4]=46us; split=32 [4,4,2]=56us
+    # vs single [32]=207us). Each level's fan-in must DIVIDE the running count so no
+    # partial is dropped (exact). If count has no divisor in [2,FANIN] (prime, e.g.
+    # a forced TRITON_SPLIT=7) we collapse it in one node (f=count, nodes=1) rather
+    # than let f fall to 1 and stall the loop -- correct and terminating for any
+    # split; auto splits are powers of two so this branch is only hit by overrides.
+    FANIN = 4
+    src = partial
+    count = split
+    while count > 4:
+        f = FANIN
+        while f > 1 and count % f != 0:
+            f -= 1
+        if f == 1:                     # count prime > 4: collapse in one node
+            f = count
+        nodes = count // f
+        dst = torch.empty(batch, nodes * TOPK, dtype=torch.int64, device=q.device)
+        w = 1 << ((f * TOPK - 1).bit_length())
+        _combine_reduce_kernel[(batch, nodes)](
+            src, dst, src.stride(0), dst.stride(0),
+            NIN=count, FANIN=f, W=w,
+            num_stages=1, num_warps=num_warps,
+        )
+        src = dst
+        count = nodes
+
+    combine_w = 1 << ((count * TOPK - 1).bit_length())
+    _combine_kernel[(batch,)](
+        src, page_table, out_page, out_raw,
+        src.stride(0), page_table.stride(0),
+        out_page.stride(0), out_raw.stride(0),
+        SPLIT=count, COMBINE_W=combine_w,
+        num_stages=1, num_warps=num_warps,
+    )
+    return out_page, out_raw
+
+

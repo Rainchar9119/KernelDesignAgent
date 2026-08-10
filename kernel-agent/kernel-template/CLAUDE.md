@@ -12,8 +12,9 @@
 - **每次动手前，先读 `plan.md` 和 `PROGRESS.md`**，确认当前在哪个 phase、上一轮做到哪。
 - `PROGRESS.md` 里可能含当前 round 的 review 结果，据此判断是否要改上一轮的结果。
 - 不要依赖对话记忆；对话可能被压缩。状态一律以这两个文件为准。
-- 每轮结束必须更新 `PROGRESS.md`，**七个字段缺一不可**：当前 phase、本轮改动、
-  ncu 证据（本轮主瓶颈类别）、**本轮方向依据**、kernel/baseline 比值、正确性是否通过、下一步。
+- 每轮结束必须更新 `PROGRESS.md`，**八个字段缺一不可**：当前 phase、本轮改动、
+  ncu 证据（本轮主瓶颈类别）、**本轮方向依据**、kernel/baseline 比值、正确性是否通过、
+  **本轮存档（`rounds/roundNN/` + snapshot md5）**、下一步。
 - 本文件（`CLAUDE.md`）只放**不可变的裁判与护栏**；具体做什么以 `plan.md` 为准。二者冲突时，
   以护栏为上限、`plan.md` 为下限——`plan.md` 不得放宽下面任何一条护栏。
 
@@ -38,6 +39,16 @@
 - **只在本 kernel 目录下写文件**。改动上游仓库源码前必须先在本目录内做副本/patch 方案并说明，
   不得直接覆盖仓库文件除非 review 明确同意。绝不动其他 kernel 目录和无关目录。
 - 任何一步跑不通（环境/编译/ncu 权限），**停下报告错误原文**，不反复重试或绕过。
+
+## 执行模型（主编排 + 方向级 subagent）
+- 主 agent 只做编排 / 战略解释 / review 调度，**不亲自跑 NCU/编译/debug**；
+  每个优化方向派一个执行 subagent 跑完整「改 → 验正确性 → 计时 → NCU → 复测」循环，只回蒸馏结果。
+- **测量在 sub、解释在 main**：subagent 填 `PROGRESS.md` 本轮的「改了什么 / ncu 证据 / 比值 / 正确性」；
+  主 agent 据此填「本轮方向依据 / 下一步」，并持方向 DAG、守「每方向≤5 迭代」止损。
+- **每轮必落 `rounds/roundNN/`**（`snapshot.cuh` + `meta.yaml` + `notes.md`）；subagent 一死，
+  **未落盘即永久丢失**。主 agent 在 subagent 返回后校验存档齐全 + snapshot md5 有效，
+  缺则打回重跑、**不得进 review**。字段与格式规范见 `rounds/README.md`（派 subagent 时注入其 prompt，
+  不需每轮全文重读）。
 
 ## 节奏
 - 这是人工监督的演练：**Phase 0 交付 harness 后**、**Phase 2 每一轮之后**都要停下等人 review，
