@@ -1,0 +1,15 @@
+round: 9
+phase: 2
+direction: "单趟 Streaming (single-pass) 攻 b256 大 batch DRAM-bound; 备选 host 分组让 Phase3 命中 L2"
+parent_round: 7                     # 从 round07 keep 态出发; 性能标尺仍是 round04 基线 (baf1b4c1)
+snapshot_md5:
+  # REJECT: 本轮无代码改动 (两条方向经实测均不可行), live 保持 R7 keep 态:
+  topk_v2.cuh: 6f7c8b572e8621089e9119d4fe7864cd
+  topk_impl.cuh: 9744602fdf60b3595a7d02fca8009e99
+  topk.py: ab0e3a29a7c28a01574d438eb1fbfd44
+correctness: PASS                   # 本轮零代码改动; verify 86/86 (live R7 态) + 官方单测 244 passed; probe 期间的临时改动均已回退 (impl md5 复原 9744602f)
+ratio_vs_baseline: 1.00             # 无代码改动, 最好成绩仍是 R7 的 0.90x (超长 shape); b256 未新增收益
+decision: reject                    # 两条方向的可行性验证均否决: 单趟无法在零容差+缓冲有界下实现; host 分组实测全线退化 (毁掉单波并发)
+one_line_reason: "NCU 复核证实 b256/L131072 主 kernel 是 2.00x DRAM (269MB/134MB WS, Memory 66% Compute 45% Waves 0.84) = Phase3 第二遍 global 重读 miss L2. 单趟 CEILING probe (跳过第二遍, 输出故意错) 证明零成本单趟可达 0.60x, 收益真实; 但 (1) 真实有界单趟不可行: 阈值 Phase1 未知 + 候选数远超 smem kMaxNumTie=2048 缓冲, provisional-threshold 压缩是改 TopKStreaming (main L2/3 + small_batch cluster 共用) 的算法级重写, 零容差风险极高且面很宽; (2) host 分组备选实测全线退化 (b256/L131072 G2 1.20x/G4 2.11x, b256/L262144 G2 1.51x) —— 根因: per-row 成本随 batch 单调下降 (b64 0.571us/row vs b256 0.238us/row), 分组串行毁掉单波并发 + 每片欠填 SM, DRAM 字节的 L2 crossover 不转化为墙钟收益, 因为该 kernel 在这些尺寸并非纯带宽受限, 分组换来的带宽收不回丢掉的并行度/占用率"
+prediction_next: null               # 无强制下一步. 若继续攻 b256, 唯一有效杠杆是保住单波并发的前提下减字节 (真单趟), 但需先设计有界缓冲的 provisional-threshold 收集且证明零容差, 属独立大工程; 或收束任务 (R7 0.90x 已是可交付收益)
+prediction_check: "方向1 (agent-memory topk_two_pass_l2.md) 预测: b256/L131072 269MB->134MB, 52.8us->~29us (~0.55x). 【DRAM 机制兑现, 但落地路径全部证否】: (a) 2.00x DRAM 与 DRAM-bound 复核兑现 (fresh NCU: Duration 51.84us, Memory 66.4%, Compute 45.6%, Waves 0.84; round05 rep dram_read 269.07MB/WS 134.22MB=2.005x). (b) 零成本单趟 CEILING (probe 跳过第二遍) b256/L131072 61.7us->37.2us=0.60x, b256/L262144 102.6us->57.7us=0.56x —— 上界收益真实且接近 roofline 预测. (c) 但 memory 里列的两条落地杠杆都被本轮证否: 杠杆#1 (单趟 collect) 缓冲溢出+阈值未知使有界实现成算法级高风险重写; 杠杆#2 (host 分组保 L2 命中) 实测反而全线退化, 因 kernel 非纯带宽受限、分组毁并发. 关键教训: DRAM-2x 是真, 但'省一半字节'的两条路要么不可有界实现、要么用并行度换带宽得不偿失 —— 与 Round 5/6/8 同型 (机制成立 != 墙钟收益)"

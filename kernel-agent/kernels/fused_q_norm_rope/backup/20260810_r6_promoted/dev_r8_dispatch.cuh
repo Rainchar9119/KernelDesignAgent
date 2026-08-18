@@ -21,9 +21,13 @@ using deepseek_v4::fp8::cast_to_ue8m0;
 using deepseek_v4::fp8::inv_scale_ue8m0;
 using deepseek_v4::fp8::pack_fp8;
 
-// Packed (x2) dequant/quant for the fp8 norm path: one hardware convert per
-// pair instead of two scalar ones (fp8 is instruction-issue bound). Bit-neutral
-// -- fp8<->fp32 uses the same round as scalar static_cast, so parity holds.
+// Vectorized (x2) dequant/quant helpers for the norm path. These issue ONE
+// packed convert instead of two scalar ones, cutting the fp8 conversion
+// instruction count in half (NCU: fp8 is instruction-issue saturated,
+// not_selected is the top stall). They are ARITHMETIC-NEUTRAL: fp8->fp32 is
+// exact, and float2->fp8x2 uses the same round-to-nearest as the scalar
+// static_cast (hardware cvt.rn.satfinite.e4m3x2), so per-element bit patterns
+// and the RMSNorm fp32 accumulation order are unchanged -> bitwise parity holds.
 template <typename DType2>
 SGL_DEVICE fp32x2_t dequant2(const DType2& v) {
   return device::cast<fp32x2_t>(v);
@@ -31,7 +35,7 @@ SGL_DEVICE fp32x2_t dequant2(const DType2& v) {
 #ifndef USE_ROCM
 template <>
 SGL_DEVICE fp32x2_t dequant2<fp8x2_e4m3_t>(const fp8x2_e4m3_t& v) {
-  return static_cast<fp32x2_t>(v);
+  return static_cast<fp32x2_t>(v);  // __nv_fp8x2_e4m3::operator float2
 }
 #endif
 
@@ -42,7 +46,7 @@ SGL_DEVICE DType2 quant2(const fp32x2_t& f) {
 #ifndef USE_ROCM
 template <>
 SGL_DEVICE fp8x2_e4m3_t quant2<fp8x2_e4m3_t>(const fp32x2_t& f) {
-  return fp8x2_e4m3_t{f};
+  return fp8x2_e4m3_t{f};  // __nv_fp8x2_e4m3(float2): cvt.rn.satfinite.e4m3x2.f32
 }
 #endif
 
@@ -116,27 +120,36 @@ Q_KERNEL void fused_q_norm_rope(const __grid_constant__ FusedQNormRopeParams par
   static_assert(kRopeSize <= kWarpThreads);
   static_assert(kRopeDim == kWarpThreads * 2, "1 (real, imag) pair per lane");
 
-  // fp8: 2 work-items/warp so their loads overlap (latency-bound); bf16: 1
-  // (bandwidth-bound, a 2nd item just adds register pressure). Per-item math is
-  // identical either way -> parity holds.
+  // Work-items per warp, chosen per DType at compile time (same idiom as
+  // kMaxVecSize). fp8 is latency-bound after the packed-convert fix (NCU:
+  // long_scoreboard #1, achieved occ ~54%): giving a warp 2 work-items lets
+  // their input loads overlap and hides that latency (measured ~1.21x). bf16 is
+  // DRAM-bandwidth bound with kLocalSize=2 already; a 2nd work-item doubles
+  // register pressure and crushes occupancy (measured ~1.2x SLOWER), so bf16
+  // keeps 1. Per (token, head) the math/accumulation order is unchanged either
+  // way -> bitwise parity holds.
   constexpr uint32_t kWorkPerWarp = (sizeof(DType) == 1) ? 2u : 1u;
 
   using Storage = AlignedVector<DType, kVecSize>;
   using DType2 = packed_t<DType>;
   constexpr bool kVecConvert = (sizeof(DType) == 1);  // fp8 only
-  // fp8 shares one freq row per token across its heads (block-per-token), but
-  // only when the grid fills the SMs; the host picks kBlockPerToken=false at
-  // small N (crossover N*H>=4096). bf16 never uses it. Dispatch-only, so math
-  // is byte-identical.
+  // fp8 uses block-per-token freq sharing ONLY when the grid is large enough to
+  // fill the SMs (big N). At small N it launches too many tiny under-filled
+  // blocks and loses to the warp-per-work path, so the host dispatches the
+  // kBlockPerToken=false instantiation there (measured crossover ~N*H>=4096).
+  // bf16 never uses block-per-token (DRAM-bound, R6 path). This flag only
+  // changes dispatch/freq-source; per-(token,head) math is byte-identical.
   constexpr bool kUseBPT = kVecConvert && kBlockPerToken;
 
   const auto warp_id = threadIdx.x / kWarpThreads;
   const auto lane_id = threadIdx.x % kWarpThreads;
   const uint32_t total_works = params.batch_size * params.num_q_heads;
 
-  // rope-tail staging. fp8's part-2 read is 32 lanes x fp8x2 (2B) -> 2 lanes
-  // share a 4B SMEM bank; pad each pair to its own 4B slot to avoid that. bf16
-  // pairs are already 4B, so bf16 keeps the packed layout.
+  // s_rope staging. For fp8 the part-2 read is 32 lanes x fp8x2 (2 bytes each):
+  // two lanes share one 4-byte SMEM bank -> inherent 2-way bank conflict. Pad
+  // each 2-byte pair out to a full 4-byte slot (kRopePadSlots per warp) so the
+  // 32-lane read strides one bank per lane (conflict-free). bf16's pair is
+  // already 4 bytes (no conflict), so bf16 keeps the packed Storage layout.
   __shared__ Storage s_rope[kFusedQNumWarps][kRopeSize];
   __shared__ uint32_t s_rope_pad[kFusedQNumWarps][kVecConvert ? kWarpThreads : 1];
   // fp8 block-per-token: one freq row shared by all heads of the block's token.
@@ -152,21 +165,26 @@ Q_KERNEL void fused_q_norm_rope(const __grid_constant__ FusedQNormRopeParams par
   uint32_t n_work;
 
   if constexpr (kUseBPT) {
-    // ---- fp8: block-per-token dispatch. A block is pinned to one token and
-    // covers up to kHeadsPerBlock consecutive heads; the token's freq row is
-    // loaded ONCE into s_freq (warp 0) and reused. freq is exact fp32 so the
-    // shared value is bit-neutral -> parity-safe. All warps reach __syncthreads
-    // (no divergent return), out-of-range warps just do zero work-items.
+    // ---- fp8: block-per-(token, head-group) dispatch. -----------------------
+    // A block is PINNED to a single token and covers up to kHeadsPerBlock
+    // consecutive heads of it; the token's freq row (256B) is loaded ONCE into
+    // s_freq (warp 0) and reused by all heads, instead of every warp re-loading
+    // its own copy (NCU: freq load ~20% of long_scoreboard; per-work freq LDGs
+    // feed the #1 not_selected issue stall). freq is exact fp32 -> sharing the
+    // SAME value from SMEM is bit-neutral -> parity-safe. All threads reach the
+    // __syncthreads (no divergent return before it) so out-of-range warps just
+    // do zero work-items.
     constexpr uint32_t kHeadsPerBlock = kFusedQNumWarps * kWorkPerWarp;  // 8
     const uint32_t blocks_per_token =
         (params.num_q_heads + kHeadsPerBlock - 1) / kHeadsPerBlock;
-    const uint32_t token = blockIdx.x / blocks_per_token;
+    const uint32_t token = blockIdx.x / blocks_per_token;      // < batch_size (grid)
     const uint32_t head_block = blockIdx.x % blocks_per_token;
     const uint32_t head_base = head_block * kHeadsPerBlock + warp_id * kWorkPerWarp;
     const int32_t tpos = static_cast<int32_t>(static_cast<const PosT*>(params.positions)[token]);
 
     PDLWaitPrimary<kUsePDL>();
 
+    // One freq load for the whole block (token is valid for every block).
     if (warp_id == 0) {
       s_freq[lane_id] = mem_freq.load(params.freqs_cis + tpos * kRopeDim);
     }
@@ -191,7 +209,7 @@ Q_KERNEL void fused_q_norm_rope(const __grid_constant__ FusedQNormRopeParams par
         input_vec[w][i] = gmem.load(in_ptr, i);
       }
     }
-    __syncthreads();  // s_freq visible to all warps before part 2
+    __syncthreads();  // s_freq must be visible to all warps before part 2
   } else {
     // ---- warp-per-(token, head) dispatch (bf16 always; fp8 at small N). -----
     const auto warp_slot = blockIdx.x * kFusedQNumWarps + warp_id;
@@ -219,14 +237,14 @@ Q_KERNEL void fused_q_norm_rope(const __grid_constant__ FusedQNormRopeParams par
     }
   }
 
-  // Process each in-range work-item; math identical to the 1-item baseline.
+  // Process each in-range work-item; identical math to the 1-item baseline.
 #pragma unroll
   for (uint32_t w = 0; w < kWorkPerWarp; ++w) {
     if (w >= n_work) break;
     const auto output_ptr = const_cast<DType*>(out_ptr[w]);
     fp32x2_t freq;
     if constexpr (kUseBPT) {
-      freq = s_freq[lane_id];
+      freq = s_freq[lane_id];  // shared: same token for all heads of this block
     } else {
       freq = mem_freq.load(params.freqs_cis + position[w] * kRopeDim);
     }
@@ -279,13 +297,14 @@ Q_KERNEL void fused_q_norm_rope(const __grid_constant__ FusedQNormRopeParams par
       }
     }
 
-    // Streaming store (st.cs) of nope tiles; stash rope tile to shared.
+    // Streaming store of nope tiles; stash rope tile to shared.
 #pragma unroll
     for (int i = 0; i < kLocalSize; ++i) {
       if (i == kLocalSize - 1 && is_rope_lane) {
         const auto rope_id = lane_id - (kWarpThreads - kRopeSize);
         if constexpr (kVecConvert) {
-          // fp8: spread this lane's pairs into 4B slots (bank-conflict-free read).
+          // Padded stash: spread this lane's kVecSize/2 fp8x2 pairs into 4-byte
+          // slots so the 32-lane read below is bank-conflict-free.
           const auto* pr = reinterpret_cast<const DType2*>(input_vec[w][i].data());
 #pragma unroll
           for (int p = 0; p < kVecSize / 2; ++p) {
@@ -307,6 +326,7 @@ Q_KERNEL void fused_q_norm_rope(const __grid_constant__ FusedQNormRopeParams par
     const auto mem_elem = tile::Memory<DType2>{lane_id, kWarpThreads};
     DType2 elem;
     if constexpr (kVecConvert) {
+      // Bank-conflict-free read: each lane's pair lives in its own 4-byte slot.
       const uint16_t raw = static_cast<uint16_t>(s_rope_pad[warp_id][lane_id]);
       elem = *reinterpret_cast<const DType2*>(&raw);
     } else {
@@ -319,7 +339,9 @@ Q_KERNEL void fused_q_norm_rope(const __grid_constant__ FusedQNormRopeParams par
         x_real * freq_imag + x_imag * freq_real,
     };
     mem_elem.store(output_ptr + (kHeadDim - kRopeDim), cast<DType2>(rotated));
-    if (w + 1 < n_work) __syncwarp();  // fence only before next item reuses s_rope
+    // Only fence before the NEXT work-item reuses s_rope; dead for kWorkPerWarp=1
+    // (bf16), so bf16 codegen stays identical to the single-item path.
+    if (w + 1 < n_work) __syncwarp();
   }
 
   PDLTriggerSecondary<kUsePDL>();
@@ -379,20 +401,25 @@ struct FusedQNormRopeKernel {
         .eps = eps,
     };
     const auto total_works = batch_size * num_q_heads;
+    // Must match the in-kernel kWorkPerWarp (per-DType: fp8=2, else 1).
     constexpr uint32_t kWorkPerWarp = (sizeof(DType) == 1) ? 2u : 1u;
     constexpr bool kVecConvert = (sizeof(DType) == 1);
     constexpr uint32_t kHeadsPerBlock = kFusedQNumWarps * kWorkPerWarp;  // 8
-    // Shape dispatch (fp8 only): block-per-token wins once the grid fills the
-    // SMs but loses to warp-per-work at small N (crossover total_works~4096).
+    // Shape dispatch (fp8 only): block-per-token freq sharing wins at large N
+    // (fills the SMs) but launches too many tiny under-filled blocks at small N
+    // and loses to warp-per-work there. Crossover measured at total_works ~4096
+    // (N*H); below it, use warp-per-work. bf16 never uses block-per-token.
     constexpr uint32_t kBPTMinWorks = 4096;
     const bool use_bpt = kVecConvert && (total_works >= kBPTMinWorks);
 
     uint32_t num_blocks;
     if (use_bpt) {
-      num_blocks = batch_size * div_ceil(num_q_heads, kHeadsPerBlock);
+      const uint32_t blocks_per_token = div_ceil(num_q_heads, kHeadsPerBlock);
+      num_blocks = batch_size * blocks_per_token;
     } else {
       num_blocks = div_ceil(total_works, kFusedQNumWarps * kWorkPerWarp);
     }
+    // Select {pos dtype} x {block-per-token on/off} instantiation.
     const auto k = pos_dtype.is_type<int32_t>()
                        ? (use_bpt ? kernel<int32_t, true> : kernel<int32_t, false>)
                        : (use_bpt ? kernel<int64_t, true> : kernel<int64_t, false>);

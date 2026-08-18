@@ -1,0 +1,15 @@
+round: 5
+phase: 2
+direction: "A-deepen-for_each_input-prefetch(D=2)"   # ILP 软件流水加深，掩盖 long_scoreboard
+parent_round: 4                     # 从 round04_baseline_v2 出发
+snapshot_md5:
+  topk_impl.cuh: 87dc302a980b764ef5fb9ccbee2730f8   # candidate（改后）快照，非 live 源码
+  # 其余两文件本轮未改，仍等于 round04 基线：
+  #   topk_v2.cuh   baf1b4c14e5d459a1d44d36767add8d6
+  #   topk.py       ab0e3a29a7c28a01574d438eb1fbfd44
+correctness: PASS                   # verify 44/44（改后重跑，含 Cluster/ragged 全 dispatch）
+ratio_vs_baseline: 1.00             # 优化后 v2 / 改动前 v2 ≈ 1.00（噪声带内，无净收益）
+decision: reject                    # 机理兑现但墙钟无收益 + 引入 local spill，回退
+one_line_reason: "long_scoreboard 7.32→2.74 cyc/issue 但 Duration 31.7→30.8μs（噪声内），且额外 vec_t buf 触 32-reg 上限致 10.24KB local spill——瓶颈是 Waves/SM 0.21 的 latency-bound，减 scoreboard 换不来墙钟"
+prediction_next: "long_scoreboard 7.32 cyc/issue 预计降到 ~3-4；Duration 预计降 5-10%"
+prediction_check: "scoreboard 预测兑现（降到 2.74，超预期）；但 Duration 预测证伪（仅 31.71→30.75μs，噪声内），因根因是 grid-too-small(Waves 0.21)，非单纯 load 延迟——scoreboard 掩盖不改变 kernel 被少量 wave 卡住的事实，且 spill 抵消"

@@ -1,0 +1,16 @@
+round: 8
+phase: 2
+direction: "2-A: 分布式 problem_transform (cluster 内 8 block 各做 topk/8 的 page-table transform, 消除 worker-only 串行尾)"
+parent_round: 7                     # 从 round07 keep 态出发; 性能标尺仍是 round04 基线
+snapshot_md5:
+  topk_v2.cuh: fe7aff2d7d3ec01ce285b3525874f850   # REJECT: candidate 快照; live 已复原为 round07 keep 态 6f7c8b57
+  # 其余两文件本轮未改, 仍等于 round04 基线:
+  topk_impl.cuh: 9744602fdf60b3595a7d02fca8009e99
+  topk.py: ab0e3a29a7c28a01574d438eb1fbfd44
+correctness: PASS                   # verify 86/86 (含新增 b16/b30/b8 split k=2048 满载 transform) + 官方单测 244 passed + compute-sanitizer 0 errors
+ratio_vs_baseline: 0.92             # R8/baseline 最好 ~0.92 (L229376/L262144); 但 vs round07 keep (0.84-0.87) 全线退化
+ratio_vs_round07: 1.04-1.13         # R8 相对 R7 keep 态退化 4-13% (关键: 起点是 R7 keep, R8 使其变慢)
+decision: reject                    # 分布式 transform 反而更慢: 正确性要求的收尾 cluster.sync() 全簇栅栏 > 被消除的 7/8 空闲尾
+one_line_reason: "把 8-way split 收尾的 worker-only page-table transform 改成 8 block 各做 topk/8; 但非-worker rank 需经 DSMEM 读 worker 的 topk_indices, 正确性强制新增一道收尾 cluster.sync() 全簇栅栏; 对 k<=2048 这个 transform 本就是延迟受限的极小工作 (单块 1024 线程 <1 pass), 分 8-way 每块仍付同样 gather 延迟, 省不下时间, 反而多付一道栅栏 -> 净退化"
+prediction_next: null
+prediction_check: "方向2-A 预测 (研究 agent 出): 'epilogue no_instruction stall 下降, Duration 降 ~5-6us'. 【部分兑现但方向错误】: NCU (b64/L262144, profile/round08 vs round07) no_instruction 5.4%->4.36% 确实下降 (预测兑现), 但 Duration 44.9us->46.7us 反升 ~1.8us (预测证伪). 根因: 18.7% no_instruction 是 round06 的 b64/L131072 旧结构测的; R7 keep 态 b64/L262144 的 transform 尾其实是 sub-us 的延迟受限极小工作, 不是 6.8us 串行成本. 消除它省不到 6.8us, 而正确性强制的收尾 cluster.sync() 全簇栅栏 (8 block rendezvous) 净加 ~1.8us. no_instruction 降是因为分布式 transform 让所有 block 都有活干填了发射间隙, 但墙钟被新栅栏拖长 -> 典型 '填满发射间隙 != 缩短墙钟'."

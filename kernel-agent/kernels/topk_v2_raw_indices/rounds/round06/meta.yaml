@@ -1,0 +1,15 @@
+round: 6
+phase: 2
+direction: "C-方案甲: host 路由 batch∈(30,128] 长序列→topk_small_batch_kernel 8-way cluster split"
+parent_round: 4                     # 从 round04_baseline_v2 出发
+snapshot_md5:
+  topk_v2.cuh: ff9c1f3979dccd952e4c9634d4417dc2   # candidate（改后）快照，非 live 源码
+  # 其余两文件本轮未改，仍等于 round04 基线：
+  topk_impl.cuh: 9744602fdf60b3595a7d02fca8009e99
+  topk.py: ab0e3a29a7c28a01574d438eb1fbfd44
+correctness: PASS                   # verify 62/62（含新增 batch>30 cluster/ragged）+ 官方单测 244 passed
+ratio_vs_baseline: 1.11             # 目标 shape b64/L131072 优化后/改动前 = 1.11（退化），b64/L262144=0.91（改善）
+decision: reject                    # 目标 shape 退化，回退；保留跨界发现供 Round 7
+one_line_reason: "8-way split 把 Waves/SM 0.21→1.68、Occ 49%→89%（预测兑现），但 cluster 协调开销（DSMEM all-reduce+2×sync+非primary归并+elected串行transform）使单 kernel Duration 31.7→37μs——目标 b64/L131072 反退化 11%；仅在 baseline 已用多波 persistent-pool 的 L≥~200K（b64/L262144 改善 9%）才划算"
+prediction_next: "Round 7: 路由改为 seq_len-aware——仅当 baseline 会走多波 persistent-pool（num_cluster_items>0，约 seq>plan阈值）时才路由 small_batch，预期只吃 L262144 类收益不误伤 L131072"
+prediction_check: "Round 5 无预测；本轮预测 Waves 0.21→~1.68 兑现（实测 1.68）、Occ 49.5%→>70% 兑现（89.1%）、Duration 31-38μs→12-20μs 证伪（实测 37μs，反升）——因未计入 cluster 协调开销，grid 填满不等于墙钟缩短"

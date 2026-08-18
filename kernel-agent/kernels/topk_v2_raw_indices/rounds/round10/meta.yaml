@@ -1,0 +1,16 @@
+round: 10
+phase: 2
+direction: "方向3: adaptive split 因子 N (新增 N=4, host 按 batch/seq 在 N=8/N=4 间选). 拓宽 R7 keep 的 win 区到 mid-batch band b65-74."
+parent_round: 7                     # 从 R7 keep 态 (6f7c8b57) 出发, 新增 N=4 分支, 不破坏 R7 已有收益; 基线仍是 round04
+snapshot_md5:
+  topk_v2.cuh: 183a8e792d0e5c7accbe1872cc6da8fb   # KEEP: live 源码现处此改后态 (非回退)
+  # 其余两文件本轮未改, 仍等于 round04 基线:
+  topk_impl.cuh: 9744602fdf60b3595a7d02fca8009e99  # TopKCluster<N> 泛化到 N=4, 一行未改
+  topk.py: ab0e3a29a7c28a01574d438eb1fbfd44
+correctness: PASS                   # verify 130/130 (含 7 个 route_split4 用例 + 5 个负向交界) + 官方单测 244 passed
+                                    # + memcheck 0 errors (isolated + 官方全量并发) + racecheck: N=4 与 N=8 同签名 (pre-existing 良性)
+ratio_vs_baseline: 0.68             # 新 win 区最好点 b72/L196608 优化后/改动前 = 0.68 (改善 32%); R7 区 b64/L262144 仍 0.92 (未破坏)
+decision: keep                      # win 区从 R7 的 b<=64/L>=196608 拓宽到 +b65-74/L>=131072; 全带零退化
+one_line_reason: "新增 TopKCluster<4> + 模板化 topk_small_batch_kernel<kPDL,kNumRanks>; host 三分支 route_split8(=R7逐字)/route_split4(新增, batch∈(64,74] & L>=131072)/fallback(=baseline逐字). N=4 让 b65-74 单 cluster-wave 填满 SM (b74*4=296<=304 slots), 命中 b72 L131072 0.78x / L196608 0.68x / L262144 0.79x; b75+ (2波尾) 与 fragile 的 b88-96 win 一律排除回落."
+prediction_next: null               # keep; 若继续可探 N=2 (152 slots, batch<=~152 一波) 补 b96-152 带, 但 b88-96 win 依赖 plan 空池 fragile, 需先固化 plan
+prediction_check: "方向3 模型 (cluster_split_model.md) 兑现: (a) N=4 co-resident 上限 floor(304/4)=76 => 1-wave band 上界; 实测 b74*4=296 仍 1 波 (NCU Waves/SM 0.95, Occ 97%), b75 起 Duration 从 ~0.044ms 阶跃到 ~0.060ms (2 波) => cap=74 精确落在 1-wave 边界, 兑现. (b) 'optimal N ~ where batch*N~=304' 兑现: b72 N=4 (288 blocks, 1 波, 0.0437ms) 明显优于 b72 N=8 (576 blocks, ~2 波, 0.0604ms), n4/n8=0.72. (c) NCU: N=4 单 kernel Duration 40.4us / Waves 0.95 / Occ 97% vs baseline persistent_cluster grid240 Duration 50.85us Waves 0.79 (需 ceil(72/30)=3 波) + main<3> grid72 7.36us + plan 4.45us => 单 split kernel < baseline 三 kernel 之和, cluster_waves 从 baseline 池 3 波 (+尾) 降到 1 波, 墙钟 0.0557->0.0437ms 兑现. **证伪部分**: 研究 agent 初设 cap=96/minseq=196608 预测 b96 win; 实测 b80-96 在 (64,96] 内非单调 -- b75-80 因 2 波尾 regress (n4/base 1.04-1.12), b88-96 又 win 但仅因 plan 在这些 batch 留空池 (count(seq>threshold)>cap 触发) 使 baseline 退化成 single-block main<3>, 是 fragile 的 plan-artifact win 且被 b80 regress 谷隔开. 故 cap 从 96 收到 74 (robust 1-wave 矩形), minseq 从 196608 降到 131072 (b65-74 从 131072 起就 win)."

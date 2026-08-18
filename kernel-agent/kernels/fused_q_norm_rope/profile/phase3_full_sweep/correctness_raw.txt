@@ -1,0 +1,693 @@
+/usr/local/lib/python3.12/site-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+Could not import transformers.models.llama.modeling_llama; LlamaFlashAttention2 compat patch not applied.
+[OK ] bf16 N=     1 H=  1 int32 works=      1 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H=  1 int64 works=      1 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H=  7 int32 works=      7 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H=  7 int64 works=      7 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H=  8 int32 works=      8 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H=  8 int64 works=      8 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H=  9 int32 works=      9 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H=  9 int64 works=      9 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 15 int32 works=     15 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 15 int64 works=     15 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 16 int32 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 16 int64 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 17 int32 works=     17 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 17 int64 works=     17 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 32 int32 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 32 int64 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 33 int32 works=     33 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 33 int64 works=     33 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 64 int32 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H= 64 int64 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H=128 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     1 H=128 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H=  1 int32 works=      2 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H=  1 int64 works=      2 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H=  7 int32 works=     14 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H=  7 int64 works=     14 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H=  8 int32 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H=  8 int64 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H=  9 int32 works=     18 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H=  9 int64 works=     18 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 15 int32 works=     30 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 15 int64 works=     30 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 16 int32 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 16 int64 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 17 int32 works=     34 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 17 int64 works=     34 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 32 int32 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 32 int64 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 33 int32 works=     66 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 33 int64 works=     66 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 64 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H= 64 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H=128 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     2 H=128 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     3 H= 17 int32 works=     51 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     3 H= 17 int64 works=     51 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H=  1 int32 works=      4 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H=  1 int64 works=      4 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H=  7 int32 works=     28 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H=  7 int64 works=     28 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H=  8 int32 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H=  8 int64 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H=  9 int32 works=     36 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H=  9 int64 works=     36 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 15 int32 works=     60 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 15 int64 works=     60 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 16 int32 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 16 int64 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 17 int32 works=     68 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 17 int64 works=     68 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 32 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 32 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 33 int32 works=    132 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 33 int64 works=    132 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 64 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H= 64 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H=128 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     4 H=128 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     5 H=  9 int32 works=     45 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     5 H=  9 int64 works=     45 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     7 H= 15 int32 works=    105 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     7 H= 15 int64 works=    105 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H=  1 int32 works=      8 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H=  1 int64 works=      8 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H=  7 int32 works=     56 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H=  7 int64 works=     56 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H=  8 int32 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H=  8 int64 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H=  9 int32 works=     72 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H=  9 int64 works=     72 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 15 int32 works=    120 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 15 int64 works=    120 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 16 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 16 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 17 int32 works=    136 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 17 int64 works=    136 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 32 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 32 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 33 int32 works=    264 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 33 int64 works=    264 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 64 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H= 64 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H=128 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=     8 H=128 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H=  1 int32 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H=  1 int64 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H=  7 int32 works=    112 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H=  7 int64 works=    112 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H=  8 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H=  8 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H=  9 int32 works=    144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H=  9 int64 works=    144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H= 15 int32 works=    240 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H= 15 int64 works=    240 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H= 16 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H= 16 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H= 17 int32 works=    272 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H= 17 int64 works=    272 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H= 32 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H= 32 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H= 33 int32 works=    528 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H= 33 int64 works=    528 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    16 H= 64 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=9.77e-04 c_max=9.77e-04 dirty=0
+[OK ] bf16 N=    16 H= 64 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=9.77e-04 c_max=9.77e-04 dirty=0
+[OK ] bf16 N=    16 H=128 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.53e-05 c_max=1.53e-05 dirty=0
+[OK ] bf16 N=    16 H=128 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.53e-05 c_max=1.53e-05 dirty=0
+[OK ] bf16 N=    17 H= 17 int32 works=    289 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    17 H= 17 int64 works=    289 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    32 H=  1 int32 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    32 H=  1 int64 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    32 H=  7 int32 works=    224 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    32 H=  7 int64 works=    224 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    32 H=  8 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    32 H=  8 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    32 H=  9 int32 works=    288 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.38e-07 c_max=2.38e-07 dirty=0
+[OK ] bf16 N=    32 H=  9 int64 works=    288 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.38e-07 c_max=2.38e-07 dirty=0
+[OK ] bf16 N=    32 H= 15 int32 works=    480 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.49e-08 c_max=1.49e-08 dirty=0
+[OK ] bf16 N=    32 H= 15 int64 works=    480 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.49e-08 c_max=1.49e-08 dirty=0
+[OK ] bf16 N=    32 H= 16 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=6.10e-05 c_max=6.10e-05 dirty=0
+[OK ] bf16 N=    32 H= 16 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=6.10e-05 c_max=6.10e-05 dirty=0
+[OK ] bf16 N=    32 H= 17 int32 works=    544 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    32 H= 17 int64 works=    544 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    32 H= 32 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    32 H= 32 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    32 H= 33 int32 works=   1056 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.42e-08 c_max=2.42e-08 dirty=0
+[OK ] bf16 N=    32 H= 33 int64 works=   1056 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.42e-08 c_max=2.42e-08 dirty=0
+[OK ] bf16 N=    32 H= 64 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=9.77e-04 c_max=9.77e-04 dirty=0
+[OK ] bf16 N=    32 H= 64 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=9.77e-04 c_max=9.77e-04 dirty=0
+[OK ] bf16 N=    32 H=128 int32 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] bf16 N=    32 H=128 int64 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] bf16 N=    63 H= 64 int32 works=   4032 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=    63 H= 64 int64 works=   4032 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=    64 H=  1 int32 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    64 H=  1 int64 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    64 H=  7 int32 works=    448 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    64 H=  7 int64 works=    448 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    64 H=  8 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    64 H=  8 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=    64 H=  9 int32 works=    576 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.38e-07 c_max=2.38e-07 dirty=0
+[OK ] bf16 N=    64 H=  9 int64 works=    576 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.38e-07 c_max=2.38e-07 dirty=0
+[OK ] bf16 N=    64 H= 15 int32 works=    960 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.49e-08 c_max=1.49e-08 dirty=0
+[OK ] bf16 N=    64 H= 15 int64 works=    960 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.49e-08 c_max=1.49e-08 dirty=0
+[OK ] bf16 N=    64 H= 16 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.22e-04 c_max=1.22e-04 dirty=0
+[OK ] bf16 N=    64 H= 16 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.22e-04 c_max=1.22e-04 dirty=0
+[OK ] bf16 N=    64 H= 17 int32 works=   1088 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=5.96e-08 c_max=5.96e-08 dirty=0
+[OK ] bf16 N=    64 H= 17 int64 works=   1088 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=5.96e-08 c_max=5.96e-08 dirty=0
+[OK ] bf16 N=    64 H= 32 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.45e-09 c_max=7.45e-09 dirty=0
+[OK ] bf16 N=    64 H= 32 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.45e-09 c_max=7.45e-09 dirty=0
+[OK ] bf16 N=    64 H= 33 int32 works=   2112 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.42e-08 c_max=2.42e-08 dirty=0
+[OK ] bf16 N=    64 H= 33 int64 works=   2112 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.42e-08 c_max=2.42e-08 dirty=0
+[OK ] bf16 N=    64 H= 64 int32 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=    64 H= 64 int64 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=    64 H=128 int32 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=    64 H=128 int64 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=    65 H= 64 int32 works=   4160 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=    65 H= 64 int64 works=   4160 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   128 H=  1 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   128 H=  1 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   128 H=  7 int32 works=    896 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.44e-04 c_max=2.44e-04 dirty=0
+[OK ] bf16 N=   128 H=  7 int64 works=    896 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.44e-04 c_max=2.44e-04 dirty=0
+[OK ] bf16 N=   128 H=  8 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   128 H=  8 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   128 H=  9 int32 works=   1152 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.38e-07 c_max=2.38e-07 dirty=0
+[OK ] bf16 N=   128 H=  9 int64 works=   1152 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.38e-07 c_max=2.38e-07 dirty=0
+[OK ] bf16 N=   128 H= 15 int32 works=   1920 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.49e-08 c_max=1.49e-08 dirty=0
+[OK ] bf16 N=   128 H= 15 int64 works=   1920 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.49e-08 c_max=1.49e-08 dirty=0
+[OK ] bf16 N=   128 H= 16 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.22e-04 c_max=1.22e-04 dirty=0
+[OK ] bf16 N=   128 H= 16 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.22e-04 c_max=1.22e-04 dirty=0
+[OK ] bf16 N=   128 H= 17 int32 works=   2176 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=9.54e-07 c_max=9.54e-07 dirty=0
+[OK ] bf16 N=   128 H= 17 int64 works=   2176 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=9.54e-07 c_max=9.54e-07 dirty=0
+[OK ] bf16 N=   128 H= 32 int32 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   128 H= 32 int64 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   128 H= 33 int32 works=   4224 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=4.88e-04 c_max=4.88e-04 dirty=0
+[OK ] bf16 N=   128 H= 33 int64 works=   4224 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=4.88e-04 c_max=4.88e-04 dirty=0
+[OK ] bf16 N=   128 H= 64 int32 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   128 H= 64 int64 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   128 H=128 int32 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   128 H=128 int64 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   256 H=  1 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   256 H=  1 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   256 H=  7 int32 works=   1792 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.44e-04 c_max=2.44e-04 dirty=0
+[OK ] bf16 N=   256 H=  7 int64 works=   1792 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.44e-04 c_max=2.44e-04 dirty=0
+[OK ] bf16 N=   256 H=  8 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   256 H=  8 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   256 H=  9 int32 works=   2304 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   256 H=  9 int64 works=   2304 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   256 H= 15 int32 works=   3840 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.05e-05 c_max=3.05e-05 dirty=0
+[OK ] bf16 N=   256 H= 15 int64 works=   3840 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.05e-05 c_max=3.05e-05 dirty=0
+[OK ] bf16 N=   256 H= 16 int32 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=9.77e-04 c_max=9.77e-04 dirty=0
+[OK ] bf16 N=   256 H= 16 int64 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=9.77e-04 c_max=9.77e-04 dirty=0
+[OK ] bf16 N=   256 H= 17 int32 works=   4352 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=9.77e-04 c_max=9.77e-04 dirty=0
+[OK ] bf16 N=   256 H= 17 int64 works=   4352 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=9.77e-04 c_max=9.77e-04 dirty=0
+[OK ] bf16 N=   256 H= 32 int32 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   256 H= 32 int64 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   256 H= 33 int32 works=   8448 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   256 H= 33 int64 works=   8448 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   256 H= 64 int32 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   256 H= 64 int64 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   256 H=128 int32 works=  32768 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=   256 H=128 int64 works=  32768 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=   300 H= 40 int32 works=  12000 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   300 H= 40 int64 works=  12000 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   512 H=  1 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   512 H=  1 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=   512 H=  7 int32 works=   3584 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.81e-06 c_max=3.81e-06 dirty=0
+[OK ] bf16 N=   512 H=  7 int64 works=   3584 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.81e-06 c_max=3.81e-06 dirty=0
+[OK ] bf16 N=   512 H=  8 int32 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=4.88e-04 c_max=4.88e-04 dirty=0
+[OK ] bf16 N=   512 H=  8 int64 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=4.88e-04 c_max=4.88e-04 dirty=0
+[OK ] bf16 N=   512 H=  9 int32 works=   4608 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   512 H=  9 int64 works=   4608 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   512 H= 15 int32 works=   7680 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   512 H= 15 int64 works=   7680 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   512 H= 16 int32 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   512 H= 16 int64 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   512 H= 17 int32 works=   8704 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   512 H= 17 int64 works=   8704 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=   512 H= 32 int32 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   512 H= 32 int64 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   512 H= 33 int32 works=  16896 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   512 H= 33 int64 works=  16896 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=   512 H= 64 int32 works=  32768 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=   512 H= 64 int64 works=  32768 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=   512 H=128 int32 works=  65536 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=   512 H=128 int64 works=  65536 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  1024 H=  1 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=  1024 H=  1 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=  1024 H=  7 int32 works=   7168 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=  1024 H=  7 int64 works=   7168 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=  1024 H=  8 int32 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=  1024 H=  8 int64 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] bf16 N=  1024 H=  9 int32 works=   9216 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  1024 H=  9 int64 works=   9216 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  1024 H= 15 int32 works=  15360 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  1024 H= 15 int64 works=  15360 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  1024 H= 16 int32 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  1024 H= 16 int64 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  1024 H= 17 int32 works=  17408 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  1024 H= 17 int64 works=  17408 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  1024 H= 32 int32 works=  32768 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  1024 H= 32 int64 works=  32768 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  1024 H= 33 int32 works=  33792 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  1024 H= 33 int64 works=  33792 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  1024 H= 64 int32 works=  65536 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  1024 H= 64 int64 works=  65536 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  1024 H=128 int32 works= 131072 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  1024 H=128 int64 works= 131072 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  2048 H=  1 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=  2048 H=  1 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] bf16 N=  2048 H=  7 int32 works=  14336 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  2048 H=  7 int64 works=  14336 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  2048 H=  8 int32 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  2048 H=  8 int64 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  2048 H=  9 int32 works=  18432 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  2048 H=  9 int64 works=  18432 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  2048 H= 15 int32 works=  30720 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  2048 H= 15 int64 works=  30720 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  2048 H= 16 int32 works=  32768 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  2048 H= 16 int64 works=  32768 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  2048 H= 17 int32 works=  34816 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  2048 H= 17 int64 works=  34816 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  2048 H= 32 int32 works=  65536 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  2048 H= 32 int64 works=  65536 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  2048 H= 33 int32 works=  67584 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  2048 H= 33 int64 works=  67584 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  2048 H= 64 int32 works= 131072 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  2048 H= 64 int64 works= 131072 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  2048 H=128 int32 works= 262144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  2048 H=128 int64 works= 262144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  4096 H=  1 int32 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.44e-04 c_max=2.44e-04 dirty=0
+[OK ] bf16 N=  4096 H=  1 int64 works=   4096 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=2.44e-04 c_max=2.44e-04 dirty=0
+[OK ] bf16 N=  4096 H=  7 int32 works=  28672 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H=  7 int64 works=  28672 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H=  8 int32 works=  32768 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H=  8 int64 works=  32768 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H=  9 int32 works=  36864 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H=  9 int64 works=  36864 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H= 15 int32 works=  61440 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H= 15 int64 works=  61440 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H= 16 int32 works=  65536 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H= 16 int64 works=  65536 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H= 17 int32 works=  69632 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H= 17 int64 works=  69632 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  4096 H= 32 int32 works= 131072 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  4096 H= 32 int64 works= 131072 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  4096 H= 33 int32 works= 135168 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  4096 H= 33 int64 works= 135168 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  4096 H= 64 int32 works= 262144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  4096 H= 64 int64 works= 262144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  4096 H=128 int32 works= 524288 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  4096 H=128 int64 works= 524288 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H=  1 int32 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  8192 H=  1 int64 works=   8192 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N=  8192 H=  7 int32 works=  57344 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  8192 H=  7 int64 works=  57344 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  8192 H=  8 int32 works=  65536 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  8192 H=  8 int64 works=  65536 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  8192 H=  9 int32 works=  73728 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  8192 H=  9 int64 works=  73728 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N=  8192 H= 15 int32 works= 122880 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H= 15 int64 works= 122880 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H= 16 int32 works= 131072 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H= 16 int64 works= 131072 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H= 17 int32 works= 139264 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H= 17 int64 works= 139264 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H= 32 int32 works= 262144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H= 32 int64 works= 262144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H= 33 int32 works= 270336 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H= 33 int64 works= 270336 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H= 64 int32 works= 524288 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H= 64 int64 works= 524288 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H=128 int32 works=1048576 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N=  8192 H=128 int64 works=1048576 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H=  1 int32 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N= 16384 H=  1 int64 works=  16384 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] bf16 N= 16384 H=  7 int32 works= 114688 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N= 16384 H=  7 int64 works= 114688 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N= 16384 H=  8 int32 works= 131072 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H=  8 int64 works= 131072 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H=  9 int32 works= 147456 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H=  9 int64 works= 147456 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 15 int32 works= 245760 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 15 int64 works= 245760 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 16 int32 works= 262144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 16 int64 works= 262144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 17 int32 works= 278528 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 17 int64 works= 278528 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 32 int32 works= 524288 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 32 int64 works= 524288 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 33 int32 works= 540672 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 33 int64 works= 540672 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 64 int32 works=1048576 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H= 64 int64 works=1048576 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] bf16 N= 16384 H=128 int32 works=2097152 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] bf16 N= 16384 H=128 int64 works=2097152 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] fp8  N=     1 H=  1 int32 works=      1 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H=  1 int64 works=      1 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H=  7 int32 works=      7 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H=  7 int64 works=      7 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H=  8 int32 works=      8 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H=  8 int64 works=      8 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H=  9 int32 works=      9 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H=  9 int64 works=      9 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 15 int32 works=     15 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 15 int64 works=     15 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 16 int32 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 16 int64 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 17 int32 works=     17 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 17 int64 works=     17 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 32 int32 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 32 int64 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 33 int32 works=     33 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 33 int64 works=     33 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 64 int32 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H= 64 int64 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H=128 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     1 H=128 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H=  1 int32 works=      2 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H=  1 int64 works=      2 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H=  7 int32 works=     14 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H=  7 int64 works=     14 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H=  8 int32 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H=  8 int64 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H=  9 int32 works=     18 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H=  9 int64 works=     18 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 15 int32 works=     30 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 15 int64 works=     30 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 16 int32 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 16 int64 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 17 int32 works=     34 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 17 int64 works=     34 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 32 int32 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 32 int64 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 33 int32 works=     66 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 33 int64 works=     66 %4=2 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 64 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H= 64 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H=128 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     2 H=128 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     3 H= 17 int32 works=     51 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     3 H= 17 int64 works=     51 %4=3 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H=  1 int32 works=      4 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H=  1 int64 works=      4 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H=  7 int32 works=     28 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H=  7 int64 works=     28 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H=  8 int32 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H=  8 int64 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H=  9 int32 works=     36 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H=  9 int64 works=     36 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 15 int32 works=     60 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 15 int64 works=     60 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 16 int32 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 16 int64 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 17 int32 works=     68 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 17 int64 works=     68 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 32 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 32 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 33 int32 works=    132 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 33 int64 works=    132 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 64 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H= 64 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H=128 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     4 H=128 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     5 H=  9 int32 works=     45 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     5 H=  9 int64 works=     45 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     7 H= 15 int32 works=    105 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     7 H= 15 int64 works=    105 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H=  1 int32 works=      8 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H=  1 int64 works=      8 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H=  7 int32 works=     56 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H=  7 int64 works=     56 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H=  8 int32 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H=  8 int64 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H=  9 int32 works=     72 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H=  9 int64 works=     72 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 15 int32 works=    120 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 15 int64 works=    120 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 16 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 16 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 17 int32 works=    136 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 17 int64 works=    136 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 32 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 32 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 33 int32 works=    264 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 33 int64 works=    264 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 64 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H= 64 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H=128 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=     8 H=128 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H=  1 int32 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H=  1 int64 works=     16 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H=  7 int32 works=    112 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H=  7 int64 works=    112 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H=  8 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H=  8 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H=  9 int32 works=    144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H=  9 int64 works=    144 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 15 int32 works=    240 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 15 int64 works=    240 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 16 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 16 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 17 int32 works=    272 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 17 int64 works=    272 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 32 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 32 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 33 int32 works=    528 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 33 int64 works=    528 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 64 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H= 64 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H=128 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    16 H=128 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    17 H= 17 int32 works=    289 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    17 H= 17 int64 works=    289 %4=1 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H=  1 int32 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H=  1 int64 works=     32 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H=  7 int32 works=    224 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H=  7 int64 works=    224 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H=  8 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H=  8 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H=  9 int32 works=    288 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H=  9 int64 works=    288 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 15 int32 works=    480 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 15 int64 works=    480 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 16 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 16 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 17 int32 works=    544 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 17 int64 works=    544 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 32 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 32 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 33 int32 works=   1056 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 33 int64 works=   1056 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 64 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H= 64 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H=128 int32 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    32 H=128 int64 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    63 H= 64 int32 works=   4032 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    63 H= 64 int64 works=   4032 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H=  1 int32 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H=  1 int64 works=     64 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H=  7 int32 works=    448 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H=  7 int64 works=    448 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H=  8 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H=  8 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H=  9 int32 works=    576 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H=  9 int64 works=    576 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 15 int32 works=    960 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 15 int64 works=    960 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 16 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 16 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 17 int32 works=   1088 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 17 int64 works=   1088 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 32 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 32 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 33 int32 works=   2112 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 33 int64 works=   2112 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 64 int32 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H= 64 int64 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H=128 int32 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    64 H=128 int64 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    65 H= 64 int32 works=   4160 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=    65 H= 64 int64 works=   4160 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H=  1 int32 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H=  1 int64 works=    128 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H=  7 int32 works=    896 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H=  7 int64 works=    896 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H=  8 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H=  8 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H=  9 int32 works=   1152 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H=  9 int64 works=   1152 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 15 int32 works=   1920 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 15 int64 works=   1920 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 16 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 16 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 17 int32 works=   2176 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 17 int64 works=   2176 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 32 int32 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 32 int64 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 33 int32 works=   4224 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 33 int64 works=   4224 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 64 int32 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H= 64 int64 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H=128 int32 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   128 H=128 int64 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H=  1 int32 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H=  1 int64 works=    256 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H=  7 int32 works=   1792 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H=  7 int64 works=   1792 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H=  8 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H=  8 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H=  9 int32 works=   2304 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H=  9 int64 works=   2304 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H= 15 int32 works=   3840 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H= 15 int64 works=   3840 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H= 16 int32 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H= 16 int64 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H= 17 int32 works=   4352 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H= 17 int64 works=   4352 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H= 32 int32 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H= 32 int64 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H= 33 int32 works=   8448 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H= 33 int64 works=   8448 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   256 H= 64 int32 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=   256 H= 64 int64 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=   256 H=128 int32 works=  32768 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=   256 H=128 int64 works=  32768 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=   300 H= 40 int32 works=  12000 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   300 H= 40 int64 works=  12000 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H=  1 int32 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H=  1 int64 works=    512 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H=  7 int32 works=   3584 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H=  7 int64 works=   3584 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H=  8 int32 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H=  8 int64 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H=  9 int32 works=   4608 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H=  9 int64 works=   4608 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H= 15 int32 works=   7680 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H= 15 int64 works=   7680 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H= 16 int32 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H= 16 int64 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H= 17 int32 works=   8704 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H= 17 int64 works=   8704 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H= 32 int32 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H= 32 int64 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H= 33 int32 works=  16896 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H= 33 int64 works=  16896 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H= 64 int32 works=  32768 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N=   512 H= 64 int64 works=  32768 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N=   512 H=128 int32 works=  65536 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=   512 H=128 int64 works=  65536 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H=  1 int32 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H=  1 int64 works=   1024 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H=  7 int32 works=   7168 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H=  7 int64 works=   7168 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H=  8 int32 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H=  8 int64 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H=  9 int32 works=   9216 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H=  9 int64 works=   9216 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H= 15 int32 works=  15360 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  1024 H= 15 int64 works=  15360 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  1024 H= 16 int32 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H= 16 int64 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H= 17 int32 works=  17408 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H= 17 int64 works=  17408 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  1024 H= 32 int32 works=  32768 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  1024 H= 32 int64 works=  32768 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  1024 H= 33 int32 works=  33792 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N=  1024 H= 33 int64 works=  33792 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N=  1024 H= 64 int32 works=  65536 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=  1024 H= 64 int64 works=  65536 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=  1024 H=128 int32 works= 131072 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  1024 H=128 int64 works= 131072 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  2048 H=  1 int32 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  2048 H=  1 int64 works=   2048 %4=0 path=WPW parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  2048 H=  7 int32 works=  14336 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  2048 H=  7 int64 works=  14336 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  2048 H=  8 int32 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  2048 H=  8 int64 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  2048 H=  9 int32 works=  18432 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] fp8  N=  2048 H=  9 int64 works=  18432 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] fp8  N=  2048 H= 15 int32 works=  30720 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N=  2048 H= 15 int64 works=  30720 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N=  2048 H= 16 int32 works=  32768 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] fp8  N=  2048 H= 16 int64 works=  32768 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] fp8  N=  2048 H= 17 int32 works=  34816 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=  2048 H= 17 int64 works=  34816 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=  2048 H= 32 int32 works=  65536 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N=  2048 H= 32 int64 works=  65536 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N=  2048 H= 33 int32 works=  67584 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  2048 H= 33 int64 works=  67584 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  2048 H= 64 int32 works= 131072 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=6.25e-02 c_max=6.25e-02 dirty=0
+[OK ] fp8  N=  2048 H= 64 int64 works= 131072 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=6.25e-02 c_max=6.25e-02 dirty=0
+[OK ] fp8  N=  2048 H=128 int32 works= 262144 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=2.50e-01 c_max=2.50e-01 dirty=0
+[OK ] fp8  N=  2048 H=128 int64 works= 262144 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=2.50e-01 c_max=2.50e-01 dirty=0
+[OK ] fp8  N=  4096 H=  1 int32 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  4096 H=  1 int64 works=   4096 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  4096 H=  7 int32 works=  28672 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  4096 H=  7 int64 works=  28672 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  4096 H=  8 int32 works=  32768 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] fp8  N=  4096 H=  8 int64 works=  32768 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.91e-03 c_max=3.91e-03 dirty=0
+[OK ] fp8  N=  4096 H=  9 int32 works=  36864 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  4096 H=  9 int64 works=  36864 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  4096 H= 15 int32 works=  61440 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] fp8  N=  4096 H= 15 int64 works=  61440 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] fp8  N=  4096 H= 16 int32 works=  65536 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N=  4096 H= 16 int64 works=  65536 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N=  4096 H= 17 int32 works=  69632 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=  4096 H= 17 int64 works=  69632 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=  4096 H= 32 int32 works= 131072 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] fp8  N=  4096 H= 32 int64 works= 131072 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] fp8  N=  4096 H= 33 int32 works= 135168 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  4096 H= 33 int64 works= 135168 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  4096 H= 64 int32 works= 262144 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  4096 H= 64 int64 works= 262144 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  4096 H=128 int32 works= 524288 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  4096 H=128 int64 works= 524288 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  8192 H=  1 int32 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=  8192 H=  1 int64 works=   8192 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=  8192 H=  7 int32 works=  57344 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  8192 H=  7 int64 works=  57344 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N=  8192 H=  8 int32 works=  65536 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=  8192 H=  8 int64 works=  65536 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.95e-03 c_max=1.95e-03 dirty=0
+[OK ] fp8  N=  8192 H=  9 int32 works=  73728 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=6.25e-02 c_max=6.25e-02 dirty=0
+[OK ] fp8  N=  8192 H=  9 int64 works=  73728 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=6.25e-02 c_max=6.25e-02 dirty=0
+[OK ] fp8  N=  8192 H= 15 int32 works= 122880 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=6.25e-02 c_max=6.25e-02 dirty=0
+[OK ] fp8  N=  8192 H= 15 int64 works= 122880 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=6.25e-02 c_max=6.25e-02 dirty=0
+[OK ] fp8  N=  8192 H= 16 int32 works= 131072 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  8192 H= 16 int64 works= 131072 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  8192 H= 17 int32 works= 139264 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] fp8  N=  8192 H= 17 int64 works= 139264 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=7.81e-03 c_max=7.81e-03 dirty=0
+[OK ] fp8  N=  8192 H= 32 int32 works= 262144 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=2.50e-01 c_max=2.50e-01 dirty=0
+[OK ] fp8  N=  8192 H= 32 int64 works= 262144 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=2.50e-01 c_max=2.50e-01 dirty=0
+[OK ] fp8  N=  8192 H= 33 int32 works= 270336 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  8192 H= 33 int64 works= 270336 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N=  8192 H= 64 int32 works= 524288 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=6.25e-02 c_max=6.25e-02 dirty=0
+[OK ] fp8  N=  8192 H= 64 int64 works= 524288 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=6.25e-02 c_max=6.25e-02 dirty=0
+[OK ] fp8  N=  8192 H=128 int32 works=1048576 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=2.50e-01 c_max=2.50e-01 dirty=0
+[OK ] fp8  N=  8192 H=128 int64 works=1048576 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=2.50e-01 c_max=2.50e-01 dirty=0
+[OK ] fp8  N= 16384 H=  1 int32 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N= 16384 H=  1 int64 works=  16384 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=0.00e+00 c_max=0.00e+00 dirty=0
+[OK ] fp8  N= 16384 H=  7 int32 works= 114688 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N= 16384 H=  7 int64 works= 114688 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N= 16384 H=  8 int32 works= 131072 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N= 16384 H=  8 int64 works= 131072 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=3.12e-02 c_max=3.12e-02 dirty=0
+[OK ] fp8  N= 16384 H=  9 int32 works= 147456 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] fp8  N= 16384 H=  9 int64 works= 147456 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.56e-02 c_max=1.56e-02 dirty=0
+[OK ] fp8  N= 16384 H= 15 int32 works= 245760 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N= 16384 H= 15 int64 works= 245760 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N= 16384 H= 16 int32 works= 262144 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=6.25e-02 c_max=6.25e-02 dirty=0
+[OK ] fp8  N= 16384 H= 16 int64 works= 262144 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=6.25e-02 c_max=6.25e-02 dirty=0
+[OK ] fp8  N= 16384 H= 17 int32 works= 278528 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N= 16384 H= 17 int64 works= 278528 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N= 16384 H= 32 int32 works= 524288 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N= 16384 H= 32 int64 works= 524288 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N= 16384 H= 33 int32 works= 540672 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N= 16384 H= 33 int64 works= 540672 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=1.25e-01 c_max=1.25e-01 dirty=0
+[OK ] fp8  N= 16384 H= 64 int32 works=1048576 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=2.50e-01 c_max=2.50e-01 dirty=0
+[OK ] fp8  N= 16384 H= 64 int64 works=1048576 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=2.50e-01 c_max=2.50e-01 dirty=0
+[OK ] fp8  N= 16384 H=128 int32 works=2097152 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=2.50e-01 c_max=2.50e-01 dirty=0
+[OK ] fp8  N= 16384 H=128 int64 works=2097152 %4=0 path=BPT parity=0 b_gold=True c_gold=True b_max=2.50e-01 c_max=2.50e-01 dirty=0
+
+=== CORRECTNESS TOTAL 688 cells, FAILS: 0 ===

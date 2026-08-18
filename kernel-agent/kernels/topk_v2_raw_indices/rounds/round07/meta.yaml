@@ -1,0 +1,15 @@
+round: 7
+phase: 2
+direction: "C-收窄: seq_len-aware 路由 (batch∈(30,64] 且 seq>=196608 才走 8-way split, 否则回落 baseline)"
+parent_round: 6                     # 从 round06 candidate (无条件放宽 CAP) 收窄而来; 基线仍是 round04
+snapshot_md5:
+  topk_v2.cuh: 6f7c8b572e8621089e9119d4fe7864cd   # KEEP: live 源码现处此改后态 (非回退)
+  # 其余两文件本轮未改, 仍等于 round04 基线:
+  topk_impl.cuh: 9744602fdf60b3595a7d02fca8009e99
+  topk.py: ab0e3a29a7c28a01574d438eb1fbfd44
+correctness: PASS                   # verify 80/80 (含 R7 阈值上下两侧 cluster/ragged) + 官方单测 244 passed
+ratio_vs_baseline: 0.90             # 最好收益 b64/L262144 优化后/改动前 = 0.90 (改善 10%); 其余 shape >=~1.0 未退化
+decision: keep                      # 首个可 keep 轮! 超长 shape 净赚, 阈值下方/CAP外/短序列/page-only 全不退化
+one_line_reason: "在 round06 host 路由上再加两道门控 (batch<=kSmallBatchClusterCap=64 且 max_seq_len>=kSmallBatchSplitMinSeq=196608) 才走 8-way split; 命中 b64/L>=196608 的 win 区间 (L262144 0.90x, L196608 ~0.99x), 阈值下 (L131072 ~1.0x 回落 baseline 逐字相同) / CAP外 (b96/b256 回落) / 短序列 / page-only 全不退化"
+prediction_next: null               # keep, 无强制下一步; 若继续, 可 NCU 细调 kSmallBatchClusterCap/kSmallBatchSplitMinSeq 或探索缩短 cluster 协调开销
+prediction_check: "Round 6 预测兑现: 'seq_len-aware 路由只吃 L>=~200K 收益不误伤 L131072' —— 兑现。crossover 实测 b64 在 (163840,196608] 之间 (L163840 1.05x 退, L196608 0.95x 赚); batch 维实测 b64 是净赚上界 (b72 L196608 1.03x 退, b80/b96 全退), 故 cap 收到 64 而非 128。阈值取 196608 (crossover 上方一档保守值)。NCU 佐证: candidate small_batch_kernel<1> grid=(64,8)=512, Waves/SM 1.68, Occ 89.5%, Duration ~45us; baseline 同 shape = persistent_cluster(30,8) Duration ~47.5us x 多波 (Waves 0.79, 需 64/30=3 波) + main<3>(grid64, Waves 0.21) ~6.8us —— baseline 多波串行被 split 换掉, 墙钟 0.0509->0.0456ms (A/B/A 复测稳定 0.88-0.90x)"

@@ -1,0 +1,14 @@
+round: 13
+phase: 2
+direction: "方向3 阈值下探: kSmallBatch2MinSeq 131072->114688, 把 N=2 split 的 seq 下界降到 114688 吃 b32-48 @ L114688 的池 2 波稳定收益."
+parent_round: 12
+snapshot_md5:
+  topk_v2.cuh: a9a41fa7d4263aa9d67d2dd160b41464   # KEEP: live 源码现处此改后态 (非回退)
+  topk_impl.cuh: 9744602fdf60b3595a7d02fca8009e99  # 本轮一行未改
+  topk.py: ab0e3a29a7c28a01574d438eb1fbfd44
+correctness: PASS                   # verify 196/196 (新增 7 个 R13 L114688 split2 用例) + 官方单测 244 passed + memcheck 0 errors
+ratio_vs_baseline: 0.76             # 新 win 区最好点 b48/L114688 (池 2 波 -> N=2 单波) = 0.76
+decision: keep                      # seq 下界 131072->114688, 新增 b31-64 & L=114688 稳定收益带; 全带零退化
+one_line_reason: "kSmallBatch2MinSeq 从 131072 降到 114688 (仍 > kClusterFloor=65536). 只吃 b31-64 & L=114688 的稳定收益 (baseline 池 2 波 -> N=2 单波), 不碰 L81920-98304 的池空带 (收益 0.88-0.97 落在共享 GPU 噪声带内, 测不准). b48/L114688 0.76 (最好), b32-40 0.86-0.88, b56-76 0.88-0.90 顺带 win."
+prediction_next: null               # keep; seq 下界到 114688 已是稳定收益下限. 再降 (81920-98304) 收益 0.88-0.97 落在共享 GPU 噪声带内, 不可信, 不追. 建议收束.
+prediction_check: "方向3模型兑现: (a) plan probe 实测 b32-48 @ L114688 baseline 池 2 波 (num_items=32/48, waves=2), N=2 split 换掉第 2 波串行 -> 收益 0.76-0.88, 且 A/B/A 两遍 cand 仅差 5-10% (结构性收益, 可信). (b) 之前 R11 只测 b75-76@98304=1.06 就定 minseq=131072, 漏了 b31-64 这段 (grid 更小, 协调开销占比不同, crossover 更低) -- 本轮补上. (c) 无证伪: b56-76 @ L114688 (池空带) 也 win 0.88-0.90 (2-way split 分 2 块并行 > 单块扫), 无 shape 退化. **测量可信度约束 (人已指出机器被 4 个 idle scheduler 占用)**: L81920-98304 池空带的收益 0.88-0.97 与共享 GPU 噪声 (5-10%, 实测 cand 两遍波动最高 19-20%) 同量级, 不可信, 故 seq 下界只降到 114688 (池 2 波结构性收益, 远大于噪声), 不降到 81920."

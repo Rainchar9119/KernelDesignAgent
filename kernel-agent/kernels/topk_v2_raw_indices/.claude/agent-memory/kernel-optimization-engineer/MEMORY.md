@@ -1,0 +1,6 @@
+- [Cluster split-factor model](cluster_split_model.md) — TopKCluster<N> generalizes to N in {2,4,8}; adaptive-N split model for B200 small-batch cluster path
+- [Cluster coordination cost](topk_cluster_coordination.md) — where the 8-way split's fixed barrier/DSMEM cost lives; NCU stall breakdown.
+- [Hardware: B200 topk target](hw_b200_topk.md) — cc10.0 specs, L2=135.5MB, ~7.9TB/s DRAM, 152 SMs, occ2, kMaxVecBytes=32.
+- [topk_v2 two-pass / L2-residency](topk_two_pass_l2.md) — Streaming reads scores TWICE; 2x DRAM only when batch*seq*4 exceeds L2 (b256 case). Root cause of b256 DRAM-bound.
+- [NCU commands for topk reports](ncu_commands.md) — headless metric extraction from .ncu-rep.
+- [GVR Top-K feasibility](gvr_topk_feasibility.md) — NO-GO: GVR's E2E win needs cross-decode-step state; our v2 is stateless; residual 1.44× is vs weaker radix baseline v2 already beats.

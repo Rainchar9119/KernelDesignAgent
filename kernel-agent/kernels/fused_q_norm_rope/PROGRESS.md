@@ -4,8 +4,8 @@
 # PROGRESS: fused_q_norm_rope
 
 ## 当前状态
-- 当前 Phase: **Phase 2 Round 7 已 review PASS 并 promote 进 candidate。fp8 累计 1.43×；bf16 中性（DRAM 带宽墙，5 杠杆实测无 parity-safe 空间）**
-- 最好成绩 kernel/baseline 比值: **fp8 0.701（COLD, N4096H64）=1.43× / fp8 N1024 COLD 0.774=1.29×。bf16 仍 ≈1.00 中性（DRAM 带宽墙）**
+- 当前 Phase: **Phase 3 全量扫描完成（688 cell 零异常），R8 promotion 决策通过——可收官。fp8 大 N 1.37~1.54× + 小 N 持平；bf16 中性**
+- 最好成绩 kernel/baseline 比值: **fp8 N16384H64 0.65=1.54× / N4096H64 0.70=1.43× / N1024 0.777=1.29×；小 N≤8 HOT≈1.0 持平（不回退）。bf16 中性**
 - 本轮 target speedup: **≥1.05×**（更快，比值<1.0）
 - shape: bf16+fp8 各扫 N∈{17,256,1024,4096}×H∈{17,64}×pos∈{int32,int64}；含 N=17·H=17（total_works=289, %4=1）真正触发尾 warp early-return
 
@@ -317,6 +317,70 @@
   ⑤ AC-6 抽查 memory-bound 页 / K-kernel 先例留证。
 - 下一步：review 通过后 promote R7。fp8 累计 **1.43×**（R3→R4→R5→R6→R7）。bf16 见下 bf16 收口结论。
 
+### Round 8 (Phase 2, 第 6 优化轮) —— fp8 shape dispatch，修小 N regression（胜方在 dev/ 待 review）
+> R7 已 review PASS 并 promote，candidate 现=R7。本轮胜方在 `dev/main_norm_rope_r8_dispatch.cuh`，candidate 未含 R8，待 review 通过再 promote。
+> 本轮起因：R7 全网格验证 + 主 agent 复测发现 **fp8 极小 N（≤8, decode 低并发）COLD 比 baseline 慢 ~20-25%**——R7 的 block-per-token 在
+> 小 N 时 grid=N×ceil(H/8) 启动更多更小、欠填的 block，flush 敏感的 COLD 上吃亏；R6 warp-per-work 在小 N 不吃亏。真实 regression（非噪声，复测 2 次稳定）。
+- 本轮方向依据（先实测交叉点，再最小改动分档）：
+  精扫 R6 vs R7 交叉点（fp8, HOT 绝对时间, iters=300）：N8H64(works=512) R7 11.7us>R6 10.2us（R7 输）；N32(2048) R7≈R6；
+  **N64H64(works=4096) R7 10.6us<R6 11.2us（R7 开始赢）**；N128/256/512 R7 均更快。→ **交叉点 total_works≈4096**。
+- 做了什么（**最小改动 + 最大复用**，两条路径 R7 本已存在，不写新计算逻辑）：
+  ① kernel 加一个模板 bool `kBlockPerToken`（默认 true），把 fp8 的分支判据从 `kVecConvert` 改为 `kUseBPT = kVecConvert && kBlockPerToken`——
+     BPT 路径与 warp-per-work 路径**都是 R7/R6 里现成的代码**，只是现在受模板开关控制。② host launcher 按实测阈值 `total_works >= kBPTMinWorks(4096)`
+     选实例：大 N 用 `kernel<PosT,true>`（block-per-token）、小 N 用 `kernel<PosT,false>`（warp-per-work）。bf16 恒 warp-per-work（`kVecConvert` 已 gate，
+     kBlockPerToken 对 bf16 无效）。每 (token,head) 的 RMSNorm fp32 累加/lane 映射/归约树、freq 值在两条路径下都与既有版本逐字节相同 → parity-safe。
+- 正确性检查（两 dtype）：命门 N17·H17 + 小 N(1/8/64,走 warp-per-work) + 大 N(1024/4096,走 BPT) + H 非 8 倍数(1024·17) ×双 pos 双 dtype
+  **全 correctness=PASS**（逐位 parity=0、golden 全 True、guard 0 脏）。**dispatch 阈值两侧都验了**（小 N 走 false 分支、大 N 走 true 分支各自 parity=0）。
+- 性能输出（fp8 N·H64 COLD, iters=300）：**小 N 修复**——N=1 1.005、N=8 1.04（回到 baseline 持平，R7 曾是 1.25/1.21 慢）；
+  **大 N 加速保留**——N=256 0.883、N=1024 0.767（1.30×）、N=4096 0.705（1.42×）。bf16 不受影响（恒 warp-per-work）。
+- ncu 关键证据（本轮主瓶颈类别）：本轮是 dispatch 修 launch-bound 小 N，非新 kernel 瓶颈——小 N 欠填是 launch/占用主导（N=1·H64 只 8 block<152 SM），
+  改回 warp-per-work（grid 更规整、每 block 占用不那么碎）即消除 COLD 劣势；大 N 沿用 R7 的 block-per-token（freq 复用，L2 sectors↓）证据不变。
+- 本轮方向依据的 KernelWiki 回查（≥2 路径，每页写前提成立性）：
+  瓶颈锚点：fp8 小 N COLD>1（欠填/launch-bound），大 N BPT 赢。检索：
+  ① `query.py "small batch under-utilization launch bound tail wave shape dispatch kernel selection occupancy"`；
+  ② `grep_wiki.py "under-fill|tail effect|persistent|shape dispatch|occupancy|small batch" --any --only wiki`。
+  - `patterns/low-sm-utilization.md`（低 SM 占用）：手法=小问题欠填时减少 block 数/换调度粒度。**前提对小 N 成立**（N=1·H64 grid 只 8 block、
+    远欠 152 SM）→ 采纳「小 N 换回 grid 更规整的 warp-per-work」思路；BPT 的碎 block 在小 N 是负优化。
+  - `techniques/persistent-kernels.md`（复用上文）：本轮不引入 persistent，仅按 shape 在两条既有 dispatch 间选择——是「按 shape 特化」的最小形式，
+    persistent/CLC 留作未来小 N 进一步优化（此轮不做，因小 N 是 launch-bound、CUDA graph 才是根治）。
+  未命中「fp8 Q norm 按 N 在 block-per-token/warp-per-work 间 dispatch 的 SM100 专页」；走 2 路径。
+- 待 review（正确性从严）：请 reviewer：① 命门 N17H17 + **dispatch 阈值两侧**（total_works<4096 走 false、≥4096 走 true）各自全档 parity=0，
+  含 H 非 8 倍数余数 block；② 核两个模板实例（kBlockPerToken=true/false）是否都 arithmetic-neutral、且 false 分支就是 R6 的 warp-per-work（bf16 亦走它，
+  确认 bf16 codegen 未变）；③ 复现小 N regression 确已修（fp8 N≤8 COLD 回到 ≈1.0）、大 N 1.42× 保留；④ candidate 现=R7 未偷 promote。
+- 下一步：review 通过后 promote R8。届时 fp8 = 大 N 1.42×（prefill 主战场）+ 小 N 持平（decode 不再回退），bf16 中性。可收官。
+
+### Phase 3 —— 全量 workload 扫描 + promotion 决策（R8 收官）
+> R8 已 review PASS 并 promote，candidate=R8。本段为 Phase 3「autotune/shape·dtype 特化 + 全量 promotion 决策」：
+> 先由主 agent 实测各 TP 档（H=8/16/32）的 R6(WPW) vs R7(BPT) 交叉点，再由独立子 agent 全量扫描 688 cell 定论。
+- 做了什么：
+  1. **跨 TP 档交叉点实测**（主 agent）：H=8/16/32 在 total_works≈2048/4096/8192 附近扫 BPT vs WPW。发现**阈值 4096 附近整个区间是
+     launch/欠填主导的噪声区**（各档 ~10-13us、差异<1us、复测会翻转，如 H16·works8192 三测 R7/R6 互有胜负）。干净信号只在
+     works≫4096（BPT 稳赢）与 works≤2048（WPW 不吃亏）。→ **结论：per-H 单独调阈值不值得（过度工程化，<1us 收益被噪声淹没）；
+     R8 的单一阈值 total_works≥4096 已是收益/复杂度最优点**（plan Phase 3「仅在收益抵得过复杂度处 dispatch」）。**未新增特化**。
+  2. **全量扫描**（独立子 agent，只读，`profile/phase3_full_sweep/`）：dtype{bf16,fp8}×pos{int32,int64}×H{1,7,8,9,15,16,17,32,33,64,128}×
+     N{1..16384 共15档} + 跨阈值/尾warp/余数block stress = **688 cell**。
+- 正确性检查（两 dtype 全量）：**688 cell 三支柱零异常**——parity 处处=0、golden 处处 True 且 **baseline 与 candidate 报同一 max
+  值**（无 candidate 引入误差）、guard dirty 处处=0、NaN/Inf=0。三类重点全过：H 非 8 倍数余数 block、跨 4096 阈值两侧、%4≠0 尾 warp。
+- 性能输出（代表档，ratio<1=更快）：
+  - **fp8 各 TP 档大 N 加速确认 1.37~1.54×**（H8·N16384 0.730、H16·N16384 0.701、H32·N8192 0.702、H64·N4096 0.702、
+    H64·N16384 **0.650=1.54×**），随 N 增强。
+  - **fp8 小 N 持平不回退**（works<4096 走 WPW，HOT 全 0.94~1.02）；小 N COLD ±5~14% 抖动是 <8us 微秒级 kernel 的 L2-flush 既有噪声（绝对差<1us、HOT 中性）。
+  - **dispatch 阈值两侧均不劣于 baseline**（N63·H64 WPW HOT0.975、N65·H64 BPT 0.972、N64 恰阈值 1.019）；阈值 4096 是「WPW 不再更差、BPT 尚未明显更好」的合理交接点。
+  - **bf16 全档中性**（恒 WPW，HOT 0.97~1.01，无回退）。
+- ncu 关键证据（本轮主瓶颈类别）：Phase 3 为 promotion 决策非新优化轮；沿用 R7/R8 的 NCU 证据（BPT 的 freq 复用 L2 sectors↓、
+  小 N 欠填 launch-bound）。反常档 **fp8 N128·H64（works8192, BPT）COLD≈1.22**（HOT 0.983 正常）：**【2026-08-10 据 Phase 3 收官 review
+  实测修正】** 此 COLD spike 是 **block-per-token 路径在 N128 附近的窄带局部现象**（reviewer 实测：R6 纯 WPW 在 N128 COLD 实为
+  1.00~1.03 中性、并非之前所记「两路径共有」；R7 纯 BPT 与 R8 同样 spike；邻档 N96/N160 BPT COLD≈1.0 故为窄带）。**非 R8 dispatch 引入**
+  （R7 已收官 BPT 版同有此 spike，R8 只是按 works≥4096 把 N128 派给 BPT），HOT 正常、parity=0，COLD 是最坏情形指标，不构成收官阻碍。
+  （更正：先前「WPW/BPT 两路径共性」表述不准，实为 BPT-path 专属。）
+- 本轮方向依据的 KernelWiki 回查：Phase 3 为全量 promotion 决策（不新写 kernel），沿用 R8 的 `patterns/low-sm-utilization`（小 N 欠填换
+  WPW）与 R7 的 `patterns/memory-bound`（BPT freq 复用）——本轮结论是「用数据证明停在 R8 单一阈值是最优、不加特化」，属 plan Phase 3
+  「仅在收益抵得过复杂度处 dispatch」的判据落地，无新瓶颈需回查。
+- 待 review：**是**（Phase 3 收官决策，请独立 reviewer 复核 688 cell 数据与 promotion 结论）。请核：① 全量正确性零异常可复现；
+  ② per-H 特化不值得的判断（阈值区噪声）是否成立；③ R8 单一阈值在全 workload 不劣于 baseline + 大 N 有加速；④ bf16 全中性。
+- 下一步：Phase 3 review 通过即**正式收官**。最终交付：fp8 大 N 1.37~1.54×（prefill）+ 小 N 持平（decode）、bf16 中性（带宽墙，
+  5 杠杆实测无 parity-safe 空间）、全程逐位 parity=0、688 cell 全网格零异常、DType 模板保留、只在本目录改（+fp8x2_patch.cuh）。
+
 ## 待办 / 阻塞
 - **B1 已解决（fp8 编译墙，用户拍板方案 a）**：新增 `fused_q_norm_rope/fp8x2_patch.cuh`——header-only 补丁，
   为本仓库 `type.cuh` 漏登记的 `fp8x2_e4m3_t` 补 `dtype_trait<fp8x2_e4m3_t>::from()`（走 `static_cast`，
@@ -605,3 +669,64 @@ fp8 COLD 0.7015 ≪ 0.952 → **大幅过线（1.43×）**，命中报告；bf16
 **整体交付判断（可否收官）**：**可收官**。fp8 优化链 R3(st.cs)→R4(向量化 x2 cvt)→R5(每 warp 2 work-item)→R6(s_rope padding)→R7(block-per-token freq 共享) 累计 **1.43×**，每一轮 parity-safe（逐位 parity 处处=0）、每一轮 promote 前独立 review PASS、否决项均有 benchmark+NCU 证据；bf16 经两次系统探索定论为带宽墙无 parity-safe 空间、如实标注中性。R7 结构大改（block-per-token, grid=batch_size×ceil(H/8)）在我独立核对 + 补测下边界安全（无死锁、不越界读写）、bit-neutral。这是一份**又对又诚实**的交付。
 
 **一句话**：candidate=R7（md5 核实、baseline 恒编原始 kernel 未改）；R7 block-per-token 结构在我逐行核对 + 独立补测 1024×17/3×17/17×9/1×1 边界下确认无 divergent return→无死锁、余数 block 越界 warp n_work=0 不越界写、chead 夹取非越界读、freq 从 SMEM 取同一 fp32 值 bit-neutral、norm 数学体逐字节同 R6；全 32 档 + 4 组边界 correctness=PASS 逐位 parity 全 0、guard 0 脏、NaN/Inf=0，case 网格 312/0 交叉核对一致；fp8 N4096 COLD 0.7014（1.43×）精确命中真实、bf16 中性未回退且带宽墙收口诚实，AC-6 memory-bound + K-kernel 先例留证属实 → **PASS，可收官**。
+
+### [Round 8 / Phase 2 第 6 优化轮 review] 2026-08-10 — 独立审查者（正确性从严）
+
+- **审查目标**：`kernel-agent/kernels/fused_q_norm_rope/`（Round 8 = fp8 shape dispatch：kernel 加模板 bool `kBlockPerToken`、`kUseBPT=kVecConvert&&kBlockPerToken`；host 按 `total_works>=4096` 选 `kernel<PosT,true/false>`。胜方在 `dev/main_norm_rope_r8_dispatch.cuh`，candidate 未含 R8）
+- **裁决**：**PASS（可收官）**
+
+**candidate=R7 未偷 promote 核实：正确**。`md5sum candidate/main_norm_rope.cuh`=`f0632659ea8bd406690f5b676def6746`=`dev/main_norm_rope_r7_blockpertoken.cuh`，`diff` IDENTICAL——candidate 现=R7，R8 未偷 promote，属实。R8 只在 `dev/main_norm_rope_r8_dispatch.cuh`（md5 `101da3e409f425e02e6cae87c47a5232`）。仓库 baseline `deepseek_v4/main_norm_rope.cuh` md5=`698f70e9...`、`git status` 干净未改，`diff candidate <repo>` DIFFERS（cand=R7、baseline=原始 kernel）→ harness `_REPO_CUH` 恒编原始 kernel、比值恒对原始 `fused_q_norm_rope`。harness/fp8x2_patch/_TOL 本轮未改（`_TOL` bf16/fp16=2e-2、fp8=1e-1 写死，GUARD=4096、sentinel 0xAB），只在本目录写、未改上游、DType 模板保留。
+
+**代码核对（声称 vs 实际）：全部属实**。
+- **`kUseBPT=kVecConvert&&kBlockPerToken`**（L142）+ host `use_bpt=kVecConvert&&(total_works>=kBPTMinWorks=4096)`（L413）——确认存在、判据与声称一致。
+- **BPT 分支（kUseBPT=true）与 R7 逐字节等价**：`diff` R7↔R8 的 block-per-token 段（从 `block-per-(token, head-group) dispatch` 到 `s_freq must be visible`，剥注释）= **IDENTICAL**。不是新写、无引入 bug。
+- **warp-per-work 分支（false）与 R6 等价**：R6↔R8 的 setup 段规范化后逐行相同（仅 `n_work` 声明位置从内联移到分支外、freq 来源加 `if constexpr(kUseBPT)` 二分——false 侧走 `mem_freq.load(freqs_cis+position[w]*kRopeDim)` 即 R6 原样）；consume 数学体（sum_of_squares fp32 按 pair p→元素 2p,2p+1 累加、`warp::reduce_sum`、`rsqrt(sum/512+eps)`、`dequant2/quant2`、s_rope_pad 低16位stash/截读、rope 旋转、`mem_elem.store`）除 freq 来源外与 R6 逐字节相同。RMSNorm fp32 累加序/lane 映射/归约树未破。
+- **bf16 恒 warp-per-work**：`kVecConvert=(sizeof(DType)==1)` 对 bf16=false → `kUseBPT` 恒 false（与 kBlockPerToken 无关），host `use_bpt` 亦恒 false → bf16 恒选 `kernel<PosT,false>` 且 in-kernel 走 else 分支。bf16 codegen 不受新模板参数影响。实测 bf16 N1024/N4096 中性未回退佐证。
+- **grid↔kernel 实例匹配（本轮最大风险）核实：匹配**。`num_blocks` 与模板实例由**同一个** `use_bpt` 布尔驱动（L416-425）：use_bpt=true → `num_blocks=batch×ceil(H/8)` 配 `kernel<PosT,true>`（BPT grid 配 BPT kernel）；false → `num_blocks=div_ceil(total_works,4×2)` 配 `kernel<PosT,false>`（warp-per-work grid 配 warp-per-work kernel）。不存在「BPT kernel 配 warp-per-work grid」的错配可能。越界安全同 R7（余数 block 越界 warp n_work=0 不越界写、chead 夹取非越界读、fp8 分支内无 divergent return→__syncthreads 全 warp 到达不死锁）。
+
+**我复现的正确性**（未信自报，`/usr/local/bin/python harness.py --no-timing`）：
+- **全 32 档（--dtype all --pos-dtype both）correctness=PASS**：逐位 parity mismatch=0 全绿、golden allclose 全 True（fp8 max≤1.25e-1 单-ULP、bf16 档内）、guard dirty=0。
+- **dispatch 阈值两侧独立补测（本轮命门，双 dtype 双 pos 全过）**：小 N 侧 N8·H64(512)、N32·H64(2048) 走 false；阈值附近 N63·H64(4032 走 false)、**N64·H64(4096 恰好走 true)**、N65·H64(4160 走 true)；大 N 侧 N1024·H64(走 true)；H 非 8 倍数+跨阈值 N256·H17(4352 走 true 余数 block)、N17·H17(289 走 false)；额外 N512·H33(16896 true 余数)、N300·H40、N5·H9 —— **全部 bit-parity=0、golden True、dirty=0，无一例外**。dispatch 两侧 + 余数 block 均 parity-safe。
+
+**我复现的性能**（COLD/HOT 中位数 vs baseline=repo 原文件，同 lineinfo=False）：
+- **小 N regression 已修**：fp8 N=1·H64 COLD 1.00、N=8·H64 COLD ≈1.00（多次 1.0047/1.0000/1.0047；R7 曾 COLD 1.27）——回到 baseline 持平，属实。
+- **大 N 加速保留**：fp8 N=4096·H64 COLD **0.7015（1.43×）**/HOT 0.6948、N=1024·H64 COLD **0.7767（1.30×）**、N=256·H64 HOT 0.862——精确命中报告。
+- **bf16 中性未回退**：N=4096 HOT 0.99/COLD 1.00、N=1024 HOT 0.98/COLD 1.00。
+- **观察（非 ISSUE，如实记录）**：中间档 N=128·H64（works=8192 走 BPT）COLD 稳定 ≈1.23（4 次复测），但我实测 **warp-per-work（R6）在 N=128 COLD 亦为 1.11~1.23**、R7(BPT) 亦 ≈1.22——**两条路径在该档 COLD 都劣于 baseline，非 R8 阈值引入、切换 dispatch 也救不了**（HOT 该档 R8=0.978 正常）。这是中间尺寸 COLD 受 50MiB flush 主导的既有现象（R6/R7 promote 版同样存在），且被审方本轮只声称修「极小 N(≤8) decode regression + 保大 N」，未声称修所有档——该窄口径claim我已逐一验证为真。
+
+**流程合规（本轮方向依据 / AC-6）：合格，附一处机制表述不精确的提示**。字段锚定本轮瓶颈（小 N launch/欠填、大 N BPT 赢）+ 实测交叉点（R6 vs R7 逐 N 计时，我已复现 crossover 走向），2 检索路径。**抽查 `patterns/low-sm-utilization` 实机打开**：页面确有「Grid too small: Fewer threadblocks than SMs」成因 #4 + Caveat「For non-persistent kernels, ensure grid size >> SM count」——被审方「小 N 欠填（N=1·H64 grid 只 8 block<152 SM）、换 grid 更规整的 warp-per-work」的留证**与页面相符、非曲解/非伪造**。**一处如实提示（不构成 ISSUE）**：被审方把小 N BPT 劣势归因为「grid=N×ceil(H/8) 启动更多更小、欠填的 block」——但在 H=64 时两条路径 num_blocks 实为**相等**（warp-per-work=ceil(N·64/8)=8N，BPT=N·ceil(64/8)=8N），小 N BPT 真正的额外开销是 block-wide `__syncthreads`+warp0 freq-load 串行的 barrier 延迟未被摊薄，而非「更多更小 block」。该表述不精确，但**本轮决策是经验驱动**（实测 per-shape crossover、我已复现），low-sm 留证真实、瓶颈类别（小 N 欠填/launch-bound）成立，故不判伪造依据；仅提示机制归因可更准。
+
+**reward hacking 三类：均未发现**。① baseline 未换/削弱（恒编 `_REPO_CUH` 原始 kernel、git 干净；candidate=R7 非 R8）；② 判据未放水（`_TOL` 写死、parity 0 mismatch、golden NaN/Inf 独立 raise、guard 逐字节四检查齐全，harness/fp8x2_patch 未改）；③ 性能未夸大——小 N 修复（N≤8 COLD≈1.0）与大 N 保留（0.70/0.77）我均如实复现命中；中间档 N=128 COLD 劣势我主动查出并确认是两路径共有的既有现象、非本轮引入、被审方 claim 口径未覆盖它（未虚报「所有档已修」）；④ 无外包（我从头独立复现全部正确性 + 阈值两侧 + H 非 8 倍数 + 性能 + 逐段 diff，不依赖任何自报）。
+
+**bf16 未受影响核实**：`kVecConvert=false`（bf16）使 `kUseBPT` 与 host `use_bpt` 恒 false，恒选 `kernel<PosT,false>` 走 else warp-per-work=R6 路径；实测中性未回退。新模板参数 `kBlockPerToken` 对 bf16 codegen/行为无影响。
+
+**整体判断（可否收官）**：**可收官**。R8 用最小改动（两条路径均 R6/R7 现成代码、模板开关控制）+ 单一 `use_bpt` 驱动 grid 与实例匹配，修好了极小 N（≤8）decode COLD regression（回 ≈1.0）、保留大 N 1.42×/1.30×、bf16 不受影响；两个实例在 dispatch 阈值两侧 + H 非 8 倍数余数 block 全 parity=0/guard 0 脏、bit-neutral。至此 fp8 = 大 N 1.42×（prefill）+ 小 N 持平（decode 不回退），bf16 带宽墙中性。这是又对又诚实的收官轮。
+
+**一句话**：candidate=R7 未偷 promote（md5 核实）；R8 的 BPT 分支与 R7、warp-per-work 分支与 R6 逐段等价（仅 freq 来源 if-constexpr 二分），grid 与 kernel 实例由同一 `use_bpt` 驱动→匹配无错配，bf16 恒 warp-per-work 不受新模板影响；全 32 档 + 阈值两侧（N8/32/63/64/65/1024）+ H 非 8 倍数（N256·H17/N512·H33/N17·H17）双 dtype 双 pos correctness=PASS 逐位 parity 全 0、guard 0 脏；小 N regression 已修（N≤8 COLD≈1.0）、大 N 保留（N4096 COLD 0.7015=1.43×/N1024 0.777）、bf16 中性未回退，均我独立复现命中；AC-6 抽查 low-sm-utilization 页留证属实（仅提示小 N 机制归因「更多更小 block」在 H=64 不精确、真因是 __syncthreads barrier，但决策经验驱动、不判伪造）→ **PASS，可收官**。
+
+### [Phase 3 收官 review] 2026-08-10 — 独立审查者（正确性从严，收官验收）
+
+- **审查目标**：`kernel-agent/kernels/fused_q_norm_rope/`（Phase 3 全量 promotion 决策收官验收；candidate 现=R8 shape dispatch，已 promote）
+- **裁决**：**PASS（可正式收官）**
+
+**candidate=R8 & 只在本目录改：核实无误**。`md5sum candidate/main_norm_rope.cuh`=`101da3e409f425e02e6cae87c47a5232`=`dev/main_norm_rope_r8_dispatch.cuh`，`diff` IDENTICAL——R8 已 promote 进 candidate（本次是 promote 后收官验收，与 Round 8 那轮「candidate=R7 未 promote」不同，符合预期）。仓库 baseline `baidu/wenxin/sglang/.../deepseek_v4/main_norm_rope.cuh` md5=`698f70e9...`、`git -C sglang status` 该文件+目录**干净未改**，harness `_REPO_CUH` 恒指向它→比值恒对原始 `fused_q_norm_rope`。DType 模板保留（L108-109 `template<typename DType,...,bool kBlockPerToken=true>`，bf16+fp8 均编译通过跑全 32 档）。本目录改动=`candidate/main_norm_rope.cuh`+`fp8x2_patch.cuh`+`profile/phase3_full_sweep/`，无一改到上游或别的 kernel 目录。
+
+**dispatch 逻辑 & grid↔实例同源核实**：`kUseBPT=kVecConvert&&kBlockPerToken`（L142）；host `use_bpt=kVecConvert&&(total_works>=kBPTMinWorks=4096)`（L413）；`num_blocks` 与模板实例由**同一** `use_bpt` 驱动（L416-425：true→`batch×ceil(H/8)` 配 `kernel<PosT,true>`、false→`div_ceil(total_works,8)` 配 `kernel<PosT,false>`），无错配。R7↔R8 stripped diff 仅 24 行、全为模板开关/dispatch 布线（BPT 数学体、WPW 数学体、freq if-constexpr 二分），norm 累加体 fp32 累加序/lane 映射/`reduce_sum` 归约树未动。bf16：`kVecConvert=false`→`kUseBPT`与`use_bpt`恒 false→恒 `kernel<PosT,false>` 走 WPW，新模板参数对 bf16 codegen 无影响。
+
+**我抽样复现的正确性（从严，不信 688 自报）**：`/usr/local/bin/python harness.py --no-timing`，双 dtype 双 pos——命门 **N17·H17**(289,%4=1,WPW)、阈值两侧 **N63·H64**(4032,WPW)/**N65·H64**(4160,BPT)、H 非 8 倍数余数 block **N256·H17**(4352,BPT 余数)/**N512·H33**(16896,BPT 余数)、大 N **N4096·H64**/**N16384·H64**——**全部 bit-parity mismatch=0、golden allclose True（baseline 与 candidate 报同一 max：fp8 1e-1@N4096、2.5e-1@N16384 单-ULP magnitude 特征；bf16 档内）、dirty_guard_bytes=0，无一例外**。全 32 档 `--dtype all` 亦 correctness=PASS。三支柱全绿。U1（fp8 max 随 magnitude 线性放大至 2.5e-1）我独立确认：baseline/candidate 同值、二者 allclose True、parity=0，非 candidate 错误，容差 1e-1 不放宽也不误判。
+
+**688-cell 全量扫描交叉核对（我独立 grep 复现，非信自报）**：`profile/phase3_full_sweep/correctness_raw.txt` 688 行**全 `[OK ]`**、`FAILS: 0`、`parity=[1-9]`/`allclose=False`/`dirty=[1-9]` 匹配数=**0**；path 分布 BPT 154 / WPW 534（dispatch 阈值生效）。零异常属实。
+
+**我抽样复现的性能（vs baseline=repo 原文件，同 lineinfo=False）**：
+- **大 N 加速**：fp8 N4096·H64 COLD **0.7015（1.43×）**/HOT 0.696、N16384·H64 COLD **0.6501（1.54×）**——精确命中；跨 TP 档 sweep 亦 H8·N16384 0.730 / H16·N16384 0.701 / H32·N8192 0.702，1.37~1.54× 属实。
+- **小 N 不回退**：fp8 N1·H64 HOT 1.004、N8·H64 HOT 0.964/1.0（走 WPW，HOT≈持平）；COLD 在 sub-8us kernel 有 ±5~14% L2-flush 抖动、绝对差<1us，非回退。
+- **阈值两侧不劣于 baseline**：N63(WPW)HOT 0.975、N65(BPT)HOT 0.972、N64(恰阈值)1.019/1.02——交接点合理。
+- **bf16 全中性**：N4096 HOT 1.01/COLD 1.02、N1024/N16384 均 0.97~1.02，无回退。
+
+**Phase 3 promotion 决策独立判断：认同**。① 单一阈值 total_works≥4096 在全 workload 都不劣于 baseline（阈值两侧 HOT 中性、大 N 大幅加速、小 N HOT 持平）+ 大 N 有加速——成立。② 「per-H 特化不值得」我独立抽 sweep 数据核对：阈值区（works≈4096）各 H 档 HOT 全在 0.96~1.02、绝对时间 ~11us、差异<1us 且被 launch/欠填噪声淹没（如 H32·N128 vs H64·N64 均在阈值附近无稳定信号），干净信号只在 works≫4096（BPT 稳赢）/≤2048（WPW 不吃亏）——per-H 单独调阈值收益<1us 被噪声吞没，符合 plan Phase 3「仅在收益抵得过复杂度处 dispatch」，停在单一阈值是收益/复杂度最优、未过度工程化。
+
+**反常档 fp8 N128·H64 COLD≈1.22 独立判断**：**非 R8 引入、不构成收官阻碍，但被审方「两路径共有」的表述不准确（BPT-path 专属）**。我实测：R8/candidate（N128 走 BPT，works=8192）COLD 稳定 1.22~1.24（3 次）；**R6 纯 WPW 在 N128 COLD 实为 1.00~1.03（7 次复测，中性，并非被审方所称的 1.11~1.23）**；R7 纯 BPT COLD 1.00~1.22（抖动，与 R8 同）。→ 该 COLD spike 是 **block-per-token 路径在 N128/N129 附近的局部 COLD 现象**（邻档 N96(6144)/N160(10240) BPT COLD 均 0.996~1.0，故为窄带），**HOT 正常（0.98）、parity=0**。关键：R7（已 promote 且通过最终验收的 BPT 版）在 N128 同样有此 spike，**R8 只是按 works≥4096 把 N128 派给 BPT，未新引入回退**。故不构成收官阻碍。**唯一如实修正**：PROGRESS Phase3 段与 R8 review 称此为「WPW/BPT 两路径共性」并不准确——WPW 在此档中性，spike 是 BPT 专属；但这不影响「非 R8 引入 + HOT 正常 + parity=0」的结论，属表述精度问题而非 reward hacking。
+
+**reward hacking 三类：均未发现**。① baseline 未换/削弱（恒编 `_REPO_CUH` 原始 kernel、git 干净）；② 判据未放水（`_TOL` bf16/fp16=2e-2、fp8=1e-1 写死、parity 0、golden NaN/Inf 独立 raise、guard=4096 sentinel 0xAB 逐字节四检查齐全，harness/fp8x2_patch 未改）；③ 性能未夸大（大 N 1.43×/1.54× 我精确复现、小 N HOT 持平如实、bf16 中性如实；N128 COLD 劣势我主动查出、且被审方 claim 口径未虚报「全档已修」）；④ 无外包——我自己从头复现全部抽样正确性（含阈值两侧+余数 block+命门）+ 688 grep 交叉核对 + 性能 + 逐段 diff + N128 三版对照，不依赖任何自报。AC-6 抽查历轮（`patterns/low-sm-utilization.md` 实机打开，确有「Grid too small」#4 + 「grid size >> SM count」Caveat，R8 留证与页面相符）合规。
+
+**整体收官判断：又对又诚实，可正式收官**。fp8 链 R3→R8 累计大 N 1.43~1.54×（prefill 主战场）+ 小 N decode 持平不回退，bf16 触及 DRAM 带宽墙、无 parity-safe 空间（5 杠杆已排除、如实标注）；全程逐位 parity=0、688-cell 三支柱零异常、DType 模板保留、只在本目录改；R8 用最小改动（两条现成路径+模板开关+单一 use_bpt 驱动 grid/实例）在 dispatch 阈值两侧+余数 block 全 bit-neutral parity-safe；「单一阈值最优、per-H 特化不值得」的 Phase 3 决策经数据支撑、符合 plan。**PASS，可正式收官**。唯一 OPTIONAL 提示（非 ISSUE）：N128·H64 COLD spike 应记作 BPT-path 专属现象（WPW 中性）、非「两路径共有」；若追求极致可考虑把 fp8 BPT 阈值上抬避开该窄带，但因 HOT 正常、parity=0、非 R8 引入、且 COLD 是最坏情形指标，不阻碍收官。

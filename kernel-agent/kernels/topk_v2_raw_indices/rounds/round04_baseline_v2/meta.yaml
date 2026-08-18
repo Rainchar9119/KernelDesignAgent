@@ -1,0 +1,14 @@
+round: 4
+phase: 2
+direction: "baseline-v2-snapshot"   # 改动前 v2 基线快照，非优化轮
+parent_round: 3
+snapshot_md5:
+  topk_v2.cuh: baf1b4c14e5d459a1d44d36767add8d6
+  topk_impl.cuh: 9744602fdf60b3595a7d02fca8009e99
+  topk.py: ab0e3a29a7c28a01574d438eb1fbfd44
+correctness: PASS          # verify 44/44 + 官方单测 244 passed（Round 3 已验，代码同此快照）
+ratio_vs_baseline: 1.000   # 基线自身
+decision: keep             # 作为 Phase 2 所有优化轮的对比基线
+one_line_reason: "改动前 v2 源码快照，确立 Phase 2 优化的对比标尺（优化后 v2 / 本快照）"
+prediction_next: null
+prediction_check: null

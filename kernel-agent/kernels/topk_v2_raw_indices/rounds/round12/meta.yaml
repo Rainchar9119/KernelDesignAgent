@@ -1,0 +1,14 @@
+round: 12
+phase: 2
+direction: "方向3再延伸: N=2 下探 b31-64 中长带 (route_split2 batch 下界 74->30), 救回 persistent-pool 2 波的 b∈(30,64] & L∈[131072,196608) 缺口. 复用 R11 的 N=2 split, 仅改 host 路由一行."
+parent_round: 11
+snapshot_md5:
+  topk_v2.cuh: 96e7aa253bb91fc8d502dbbd1f8ef462   # KEEP: live 源码现处此改后态 (非回退)
+  topk_impl.cuh: 9744602fdf60b3595a7d02fca8009e99  # 本轮一行未改
+  topk.py: ab0e3a29a7c28a01574d438eb1fbfd44
+correctness: PASS                   # verify 170/170 + 官方单测 244 passed + memcheck 0 errors (N=2 band b32-64)
+ratio_vs_baseline: 0.68             # 新 win 区最好点 b48/L131072 优化后/改动前 = 0.68 (改善 32%)
+decision: keep                      # win 区拓宽到 b31-64 & L∈[131072,163840]; 全带零退化
+one_line_reason: "route_split2 的 batch 下界从 kSmallBatch4Cap(74) 改到 kNumPersistentClusters(30), 优先级 route_split8 > route_split4 > route_split2 不变. 救回 b∈(30,64] & L∈[131072,163840] 带 (baseline 池 2 波 -> N=2 单波), 最好 b48/L131072 0.68x; b64/L196608 (R7 split8 区) breakeven 0.95 不退化; b77+/b96/短序列全不退化."
+prediction_next: null               # keep; b31-64 & L∈[131072,163840] 的洞已补. 残余: (a) b31-64 & L=196608 附近 breakeven 带 (0.95-0.97, R7 split8 与 N=2 交界, 收益小); (b) b77-152 的 2 波尾. 均属更细的 plan/阈值工程, 边际递减. 建议收束.
+prediction_check: "方向3模型 (cluster_split_model) 兑现: (a) N=2 协调开销最小, 能把 seq 下界从 N=8 的 196608 降到 131072 -- 兑现 (b31-64 & L131072-163840 全线 win 0.68-0.82, k2048 0.75-0.79). (b) plan probe 实测的 baseline 池状态兑现: b32/48 全 L 池 2 波 (慢, 救回后收益大), b60-64 池空带 (单块 Streaming) 仍 win 但幅度小 (0.73-0.77, 2-way split 比单块 Streaming 更省). (c) NCU 兑现: b48/L131072 N=2 candidate grid=96 Duration 29.92us Waves 0.32, 单波 split < baseline 池 2 波. (d) 无证伪: 预测的 'b60-64 池空带可能持平/退化' 未发生 -- 实测仍 win (0.70-0.77), 说明 2-way split 对单块 Streaming baseline 也有收益 (分 2 块并行 > 单块扫 131072), 好于预测. **风险闭环**: b64/L196608 breakeven 0.95 (R7 split8 区, 不退化), 无 shape 退化."

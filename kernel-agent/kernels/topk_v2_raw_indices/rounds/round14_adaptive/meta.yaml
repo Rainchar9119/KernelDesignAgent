@@ -1,0 +1,13 @@
+round: 14
+phase: 2
+direction: "可移植性: 设备自适应版 (topk_v2_adaptive.cuh, cap 按 SM 数运行时缩放) 切换为 live; 硬编码 B200 版留档."
+parent_round: 13
+snapshot_md5:
+  topk_v2_adaptive.cuh: 8f4190d2e4eccd2f4f064c7b70eb3815   # live (static 缓存 sm_count + 注释精简)
+  topk_v2_hardcoded.cuh: a9a41fa7d4263aa9d67d2dd160b41464   # 硬编码 B200 版, 留档备份 (未引用)
+correctness: PASS                   # verify 196/196 + 官方单测 244 passed + memcheck 0 errors (全走 adaptive 版)
+ratio_vs_baseline: 0.586            # 全 case 性能 (adaptive vs baseline=round04) 最好点 b76/L262144
+decision: keep                      # adaptive 为 live; 硬编码版留档
+one_line_reason: "cap 从硬编码 B200 值改为运行时 get_sm_count 缩放 (cap = sm_count * B200cap / 152), B200 恒等、换卡正确缩小不误路由; minseq 保守保留. sm_count 用 static 缓存避免 per-launch cudaDeviceGetAttribute (~1us) 退化短序列 kernel. 全量验证通过, reviewer PASS 无 ISSUE."
+prediction_next: null               # 任务收束. adaptive 版为最终 live.
+prediction_check: "B200 恒等 (sm=152 -> cap8/4/2 = 64/74/76 精确复现). 全 case 性能 win 区 0.586-0.896、回落区 0.995-1.003 无退化、短序列噪声带. 关键修复兑现: 初版 per-launch get_sm_count 使短序列退化 5-11% (b64/L2048 1.050), static 缓存后消除 (回落到 1.01). reviewer 独立复核 PASS 无 ISSUE."
