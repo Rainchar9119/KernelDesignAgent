@@ -1,6 +1,6 @@
 ---
 name: gen-kernel-phases
-description: 从一段简短的 kernel 描述 + 意图，生成 KDA 三阶段提示词（phase1/2/3.md）并实例化 workspace（CLAUDE.md/PROGRESS.md），写 docs/draft.md，自动调用 /humanize:gen-plan --direct 出 plan.md 初稿，再自动开独立 reviewer 打磨 plan（无 codex）。支持 OPTIMIZE（读现有 kernel 源码）与 GENERATE（研究新算子）两种模式。
+description: 初始化一个 KDA kernel 优化/生成任务的工作区。当用户想优化某个 CUDA/GPU kernel 或算子、想新写一个 kernel、给出 kernel 源码路径并说明 golden / baseline / 目标 speedup，或说“帮我优化 xxx.cu / xxx.cuh 里的算子”“这个算子太慢了帮我加速”“开个新 kernel 任务”“按 KDA 流程做这个算子”“写一个 xxx kernel”“optimize this kernel”时使用；必须先用本 skill 建工作区，不要直接动 kernel 代码。产出：三阶段提示词（phase1/2/3.md）、workspace（CLAUDE.md/PROGRESS.md）、docs/draft.md，自动调用 /humanize:gen-plan --direct 出 plan.md 初稿，再自动开独立 reviewer 打磨 plan（无 codex）。支持 OPTIMIZE（读现有 kernel 源码）与 GENERATE（研究新算子）两种模式。不适用于：已有 workspace 的后续迭代轮次、纯 NCU 分析（用 ncu-report-skill）、纯查优化手法（用 KernelWiki）。
 ---
 
 # gen-kernel-phases

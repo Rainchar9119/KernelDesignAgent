@@ -10,6 +10,9 @@
 - 详细实现计划在 `plan.md`（由 phase 提示词 → `docs/draft.md` → gen-plan + reviewer 打磨而来，
   含 AC-X 验收标准），进度在 `PROGRESS.md`。
 - **每次动手前，先读 `plan.md` 和 `PROGRESS.md`**，确认当前在哪个 phase、上一轮做到哪。
+- 用户只说「执行下一步」「继续」这类简短指令时，就按固定动作自行展开：读 `plan.md` +
+  `PROGRESS.md`（含最新 REVIEW）判断当前 phase 与上一轮结论 → 读 `prompts/phase<N>.md` →
+  按其中要求执行本轮 → 按下面的护栏和八项字段收尾。不要反问用户该读哪些文件。
 - `PROGRESS.md` 里可能含当前 round 的 review 结果，据此判断是否要改上一轮的结果。
 - 不要依赖对话记忆；对话可能被压缩。状态一律以这两个文件为准。
 - 每轮结束必须更新 `PROGRESS.md`，**八个字段缺一不可**：当前 phase、本轮改动、
