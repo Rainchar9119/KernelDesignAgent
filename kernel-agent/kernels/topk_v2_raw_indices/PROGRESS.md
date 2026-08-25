@@ -543,3 +543,58 @@
 - **E. diff**：adaptive vs 硬编码仅三类改动 —— `#include <sgl_kernel/runtime.cuh>`、transform 内新增 `get_sm_count`+cap 缩放+cap_eff 下界护栏、route 判断 cap 常量换运行时值；**kernel 实现 / split 逻辑 / fallback 分支逐字相同**（仅注释压缩，不影响语义）。缩放公式在 SM=152 精确复现 64/74/76（手算恒等确认）。
 - **F. reward hacking：无**。baseline 未换/削弱（baf1b4c1 全程 load_jit）；**cap 缩放诚实**：sm=152 → 64/74/76 恒等（手算+D 实测双证）、缩放方向正确（小卡更保守，手算 sm=132/100/80 单调降）、下界护栏 `max(cap4,64)`/`max(cap2,74)` 防过缩、minseq 保留 B200 值诚实（依赖 DRAM/L2 非 SM 数）。sm=50 时 cap8=21 跌破 kNumPersistentClusters=30 属预期内保守行为（b<=30 走恒真项不受影响），非 bug。
 - **⚠️ 复核过程事件**：reviewer 复核中 live `topk_v2_adaptive.cuh` 被第三方改动一次（md5 8a504aa9→**8f4190d2**，mtime 20:34:09，此后稳定）。改动 = 新增 `static` 缓存 `sm_count` + 压缩注释，功能等价且更优（消除每-launch 查询开销）。reviewer 全程只用 load_jit、未改 live；已针对最终稳定态 8f4190d2 重验 A/B/C/D 全套仍 PASS。**请被审方确认最终 live 态即 8f4190d2e4eccd2f4f064c7b70eb3815。**
+
+---
+
+## 【新支线】开源 PR #35095 重做（2026-08-24；非内部库轮次，单独记录）
+
+> 背景：内部库交付的是 standalone `topk_v2_raw_indices.cuh`（env 门控、不碰开源）。另有一条**开源**
+> 路线 = PR #35095（fork `sglang/`），把 raw 输出 + adaptive split 直接改进开源 `topk_v2.cuh`。本支线
+> 记录该开源 PR 的重做，与上面内部库轮次口径不同（基线是**开源 upstream v2**，非"改动前内部库 v2"）。
+
+### S1. 内部 CR 同步到 main_update（2026-08-24）
+- `sglang-mainupdate`（= `baidu/wenxin/sglang` 的 worktree）FF 到 `origin/internal/main_update`（da5b7a0da），
+  `cherry-pick 10cbea5a5`（NewRLInfra-2733）干净落地 → 新提交 e94ea1c54。3 新文件与内部 CR **md5 逐字节一致**，
+  range-diff `=` 等价。已提 CR **122184098**（目标 internal/main_update）。**未 push 到别处。**
+
+### S2. 发现开源 PR #35095 冲突（根因：upstream #35041）
+- upstream 合入 **#35041「Trim top-k v2 output modes」**（`746418a1ec`），把 v2 raw 输出改成 `TopKMode
+  {INDICES,PAGE_TABLE}` 模式切换（`page_table` 变 Optional，传 None 出 raw），**删除 `raw_indices` 参数**。
+- 结论：PR #35095 的 (1) raw 双输出被取代且对已删签名调用（CI 红、`topk_v2.cuh` 真冲突）；(2) adaptive split
+  是 upstream 没有的独有价值，但写在 #35041 前的结构上。**决策（用户选方案1）：重做 = 丢 (1)、留 (2)、rebase。**
+
+### S3. 移植（reset-and-reapply）
+- 备份分支 `backup/perf-dsv4-preupstream-3fade499a0`（=原提交 3fade499a0）；PR 分支 reset 到 upstream/main
+  `f3fe81583e`。改 **3 文件（+142/−8）**：runtime.cuh 加 `get_l2_cache_size`；topk_v2.cuh 把 split 嫁接到
+  #35041 新结构（kernel 加 `kNumRanks` 模板 / host 在 `dispatch<kMode>` lambda 内插 route_split8/4/2 + SM/L2
+  rescale）；test 保留 SPLIT_CONFIGS(13 shape→52 例) 改用新 API（page_table=None 出 raw）。**indexer.py 未改。**
+- **正确性**：`test_topk_v2.py` **286 passed**（234 既有 + 52 新 split，零容差 vs torch.topk，INDICES/PAGE_TABLE
+  双模式）；`compute-sanitizer memcheck` **0 errors**（b48/L131072、b72/L262144、b76/L262144 × k{512,2048} × 双模式）。
+
+### S4. 性能（new 带split vs 新上游 v2；基线证明 HEAD==upstream/main f3fe81583e、route_split=0）
+- 口径 = raw/INDICES、k=512、CUDA events warmup+median、A/B(/A) 交错。**提升区 = batch∈[31,76] 且
+  seq≥114688**（75 格）；batch<31 / >76 / seq≤98304 无提升。**峰值 0.597 @ (b76, L262144) ≈ 1.67×加速**；
+  k2048 峰值 0.575 同点。seq 进入阈值 114688、batch 两端 30/76 均锐利。
+- **首版残留退化**：b44 @ L{196608,327680,393216}=1.05–1.06（b40/42、b75/L393216 ~1.02–1.05）。多轮双向顺序
+  确认真实、非排序/L2 假象、输出正确。较早期旧代码库(pre-#35041)的 1.09–1.14 已减半。
+
+### S5. b40–44 退化修复（数据驱动，2026-08-24）
+- **诊断**（强制 8/4/2-way/pool 四路径逐格）：8-way 对 batch 36–48 几乎从不最优，恰在 **39–45 退化**。
+  根因量化：一波容纳 `SM×occ=304` block → 8-way(cluster8) 装 **38** cluster/波、4-way 装 **76**；batch>38
+  把 8-way 挤进半空第二波。**crossover 精确=38**，4-way 假设证实。
+- **改法**（仅 topk_v2.cuh host，随设备 rescale、不写死 batch）：新增 `kSmallBatch8WaveCap =
+  kCalibSMCount*kOccupancy/kClusterSize`(=38)；`route_split8` 高seq 上限 `cap8(64)→cap8_wave(38)`；
+  `route_split4` 加一条接住 `batch∈(38,64] & seq≥min_seq8`。**净效果：仅 batch(38,64]×seq≥196608 从
+  8-way 改 4-way，其余不变。**
+- **修复后回归**：`test_topk_v2.py` **286 passed**；**`>1.05` 归零**；b40–44 转 0.93–0.97/无提升；b31–36 收益
+  不变、**b46–64 反而改善**（0.70–0.79，原 0.86–0.94）；锚点 b76/L262144=0.592、b72/L262144=0.756 未动。
+- **诚实残留（均 ≤1.02，非退化）**：b39–45 @ L393216=1.01–1.02（pool 可压到 ~1.0，未做）；b38 @ seq≥196608
+  中性 ~0.95–0.98（单波边界 38×8=304）。建议不再加 carve-out（保持路由简单）。**待用户定。**
+
+### S6. 当前状态
+- 代码在 fork 工作区（3 文件），**未 commit、未 push**。备份分支 `backup/perf-dsv4-preupstream-3fade499a0` 在。
+- 报告：`REPORT_pr35095_adaptive_split.md`（首版口径；S5 修复后数字待同步更新）。
+- **待决策**：(a) 残留是否再压；(b) commit（新 scope=adaptive split）+ `git push --force-with-lease` 更新 PR
+  #35095——**push 属破坏性+对外发布，执行前单独确认**。
+
+
