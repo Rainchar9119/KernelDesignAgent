@@ -9,6 +9,54 @@ KernelDesignAgent（KDA）是一套面向 CUDA / GPU kernel 优化的工作流�
 
 KDA 的核心原则是：**先固定怎么判，再讨论怎么优化；先证明正确，再比较性能；每一轮都留下可审计的证据。**
 
+## 0. 简单使用
+
+新来一个算子，按下面五步走就够了，细节都在后面章节。
+
+### 第 1 步：在 KDA 根目录建任务
+
+```bash
+cd /root/paddlejob/inference-public/yuanzihang/KernelDesignAgent
+claude
+```
+
+用一句自然语言把四件事说清楚，CC 会自动生成任务 workspace，不用手打 skill 名：
+
+```text
+我要优化 /path/to/kernel.cu 里的 XXX 算子；正确性跟纯 PyTorch 参考实现比，容差 1e-3；
+性能基线就是当前这份实现，目标快 1.2 倍；输出目录名 xxx_kernel。
+```
+
+四件事 = 这次做什么（优化已有 / 从零写新的）、源码在哪、正确性跟谁比（golden + 容差）、性能基线是谁以及目标多少。如果 CC 没建 workspace 而是直接上手改代码，补一句「按 KDA 流程生成任务 workspace」。
+
+### 第 2 步：换到任务目录重新启动
+
+```bash
+cd /root/paddlejob/inference-public/yuanzihang/KernelDesignAgent/kernel-agent/kernels/<KERNEL_NAME>
+claude
+```
+
+这一步不能省：该目录的 `CLAUDE.md` 只有在这里启动才会自动生效。
+
+### 第 3 步：说一句「帮我执行下一步」
+
+之后每一轮都只需要这一句。CC 会自己读 `plan.md` / `PROGRESS.md` 确认进度接着做：先搭裁判（golden、baseline、`harness.py`），再产出第一版正确实现，然后一轮一轮用 NCU 定瓶颈驱动优化。想改默认行为时才多说，例如「这轮只 profiling 不改代码」「先修上一轮 REVIEW 的问题」。
+
+### 第 4 步：每轮结束找 reviewer 过一遍
+
+在 `KernelDesignAgent/reviewer/` 目录另起一个 claude 会话，告诉它审 `kernel-agent/kernels/<KERNEL_NAME>/`。它会自己复现数字、查有没有作弊，把结论追加到 `PROGRESS.md` 的 REVIEW 段。
+
+### 第 5 步：看进展看文件，不看对话
+
+`PROGRESS.md`（当前状态 + 每轮日志）和 `rounds/roundNN/`（每轮代码快照和数据）是唯一真相源。中断多久都能接着做——回到第 2 步的目录启动 claude，说「帮我执行下一步」即可。
+
+### 几条别踩的线
+
+- 裁判定稿后不动：不换 golden、不改 baseline、不放宽容差、不改计时口径。
+- 目标只能由人抬高，agent 不能自己放宽。
+- 正确性不过就不谈性能收益。
+- 只在当前 kernel 目录下写文件。
+
 ## 1. 整体流程
 
 一次任务通常沿着下面的链路推进：
