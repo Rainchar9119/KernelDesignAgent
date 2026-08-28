@@ -26,6 +26,12 @@ KernelDesignAgent 仓库推送到 `github.com/Rainchar9119/KernelDesignAgent`（
   写时不回显 token）。PAT 需 `repo` 权限。
 - 之后 `git push origin main` 正常（2026-08-10 已验证 `dff0f62..adc78e5`）。
 
+**另一种失败形态（2026-08-25 踩过）**：换容器后 `~/.git-credentials` **整个文件不存在**、
+`credential.helper` 也没配 → push 报 `could not read Password for 'https://Rainchar9119@github.com'`
+（不是 not found）。修法：`git config --global credential.helper store` + 重新写入那一行 PAT。
+此时文件只需一行（无多账号串号问题）。写入时若用 `$VAR` 记得先 export，否则会写出空 token 行，
+报 `Invalid username or token`。
+
 **安全**：写 token 进凭证文件/贴进对话后,提醒用户去 GitHub revoke 并重生成;换 token 时更新
 `~/.git-credentials` 里 `Rainchar9119` 那一行即可。记忆里**绝不存 token 本体**。
 
