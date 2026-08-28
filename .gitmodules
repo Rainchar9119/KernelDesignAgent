@@ -4,3 +4,6 @@
 [submodule "skills/ncu-report-skill"]
 	path = skills/ncu-report-skill
 	url = https://github.com/DongyunZou/ncu-report-skill.git
+[submodule "skills/humanize"]
+	path = skills/humanize
+	url = https://github.com/PolyArch/humanize.git
